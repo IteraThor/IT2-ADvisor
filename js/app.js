@@ -37,7 +37,11 @@ const QUESTIONS = {
         action: () => {
           userConfig.vision_mode = "lens";
           userConfig.host_compute = "none";
-          return "q_mounting"; // skip camera models & compute questions!
+          userConfig.mount_type = "none";
+          userConfig.use_baseplate = false;
+          userConfig.ring_type = "none";
+          userConfig.assembly_style = "direct";
+          return "q_lens_mount";
         }
       },
       {
@@ -50,6 +54,38 @@ const QUESTIONS = {
         action: () => {
           userConfig.vision_mode = "3cam";
           return "q_cam_model";
+        }
+      }
+    ]
+  },
+
+  q_lens_mount: {
+    category: "Phone Placement",
+    title: "How do you want to hold your smartphone?",
+    subtitle: "Autodarts Lens only needs a stable, angled view of your dartboard.",
+    options: [
+      {
+        id: "opt_lens_holder",
+        letter: "A",
+        title: "Phone Holder (Ring or Surround Clip)",
+        desc: "Compact 3D-printed bracket that clips onto your existing light ring or dartboard surround at the calibrated angle.",
+        badge: "Clips to Board / Ring",
+        badgeType: "success",
+        action: () => {
+          userConfig.lens_mount_type = "holder";
+          return "FINISHED";
+        }
+      },
+      {
+        id: "opt_lens_tripod",
+        letter: "B",
+        title: "Phone Holder Tripod / Stand Mount",
+        desc: "Freestanding mobile tripod or stand mount pointing up at the dartboard. Zero modifications to your wall or board.",
+        badge: "Freestanding Tripod",
+        badgeType: "accent",
+        action: () => {
+          userConfig.lens_mount_type = "tripod";
+          return "FINISHED";
         }
       }
     ]
@@ -368,12 +404,12 @@ function showQuestion(qId) {
   if (!container) return;
 
   // Update Progress Meta
-  const totalQuestionsEstimate = userConfig.vision_mode === "lens" ? 5 : 7;
+  const totalQuestionsEstimate = (userConfig.vision_mode === "lens" || qId === "q_lens_mount") ? 2 : 7;
   const currentStepNum = questionHistory.length + 1;
   const progressPercent = Math.min(100, Math.round((currentStepNum / totalQuestionsEstimate) * 100));
 
   const counterEl = document.getElementById("step-counter");
-  if (counterEl) counterEl.textContent = `Question ${currentStepNum}`;
+  if (counterEl) counterEl.textContent = `Question ${currentStepNum} of ${totalQuestionsEstimate}`;
 
   const fillEl = document.getElementById("progress-fill");
   if (fillEl) fillEl.style.width = `${progressPercent}%`;
@@ -603,14 +639,20 @@ function generateCustomBOM() {
   }
 
   if (isLens) {
+    const isTripod = userConfig.lens_mount_type === "tripod";
+    const partName = isTripod ? "IT2 Phone Holder Tripod / Stand Mount" : "IT2 Ring / Surround Phone Holder";
+    const partNotes = isTripod
+      ? "Mounts smartphone securely onto standard 1/4\" camera tripod or light stand"
+      : "Rigid phone bracket holding smartphone at calibrated Autodarts Lens angle";
+
     printedParts.push({
-      name: "IT2 Ring-Mounted Calibrated Phone Mount",
+      name: partName,
       qty: 1,
       material: "PLA / PETG",
-      notes: "Rigid phone mount at calibrated angle pointing at dartboard",
+      notes: partNotes,
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 65
+      estGrams: isTripod ? 55 : 65
     });
   } else {
     printedParts.push({
@@ -759,10 +801,31 @@ function generateCustomBOM() {
     });
   }
 
+  if (isLens && userConfig.lens_mount_type === "tripod") {
+    hardware.push({
+      name: "1/4\" Camera Tripod Nut / Thread Adapter",
+      qty: 1,
+      notes: "Standard 1/4-20 camera tripod thread"
+    });
+  }
+
   // 3. Electronics & Vision
   const electronics = [];
 
-  if (!isLens) {
+  if (isLens) {
+    electronics.push({
+      name: "User Smartphone with Autodarts App",
+      qty: 1,
+      notes: "Runs Autodarts Lens vision engine via phone camera & WiFi",
+      source: "Existing Device"
+    });
+    electronics.push({
+      name: "Long USB Phone Charging Cable (2m - 3m)",
+      qty: 1,
+      notes: "Recommended: Keeps phone charged during long matches",
+      source: "USB-C / Lightning Cable"
+    });
+  } else {
     const camName =
       userConfig.cam_model === "ov2710"
         ? "HBV OV2710 1080p 32x32 USB Camera Modules"
@@ -852,12 +915,20 @@ function generateCustomBOM() {
   }
 
   // 4. Required Tools
-  const tools = [
-    { name: "Hex Key Set (Allen Wrenches)", notes: "For M4 and M2 cylindrical screws" },
-    { name: "Pliers / Flush Side-Cutters", notes: "For resizing HBV camera boards from 38x38 to 32x32" }
-  ];
-  if (!isDirectTapping) {
-    tools.push({ name: "Soldering Iron with M4/M6 Insert Tip", notes: "For melting brass heat inserts into plastic" });
+  const tools = [];
+  if (isLens) {
+    tools.push({
+      name: "None Required",
+      notes: "Zero assembly tools needed for Autodarts Lens setup!"
+    });
+  } else {
+    tools.push(
+      { name: "Hex Key Set (Allen Wrenches)", notes: "For M4 and M2 cylindrical screws" },
+      { name: "Pliers / Flush Side-Cutters", notes: "For resizing HBV camera boards from 38x38 to 32x32" }
+    );
+    if (!isDirectTapping) {
+      tools.push({ name: "Soldering Iron with M4/M6 Insert Tip", notes: "For melting brass heat inserts into plastic" });
+    }
   }
 
   // Calculate Metrics
@@ -868,9 +939,13 @@ function generateCustomBOM() {
   // Update Summary Subtitle
   const summaryText = document.getElementById("config-summary-text");
   if (summaryText) {
-    const visionLabel = isLens ? "Autodarts Lens (Smartphone)" : `3-Camera (${userConfig.cam_model.toUpperCase()})`;
-    const mountLabel = isStand ? "Stand Mounted" : hasBaseplate ? "Baseplate Wall Mounted" : "Direct Wall Mounted";
-    summaryText.textContent = `Configured for ${visionLabel} • ${mountLabel} • ${userConfig.assembly_style === "direct" ? "Direct Self-Tapping" : "Heat-Set Inserts"}.`;
+    if (isLens) {
+      const mountDesc = userConfig.lens_mount_type === "tripod" ? "Phone Tripod / Stand Mount" : "Phone Ring / Surround Holder";
+      summaryText.textContent = `Autodarts Lens Setup • ${mountDesc} • 0 Wall Holes • 0 Assembly Screws • No Host PC Needed.`;
+    } else {
+      const mountLabel = isStand ? "Stand Mounted" : hasBaseplate ? "Baseplate Wall Mounted" : "Direct Wall Mounted";
+      summaryText.textContent = `Configured for 3-Camera (${userConfig.cam_model.toUpperCase()}) • ${mountLabel} • ${userConfig.assembly_style === "direct" ? "Direct Self-Tapping" : "Heat-Set Inserts"}.`;
+    }
   }
 
   // Update Metric Cards
