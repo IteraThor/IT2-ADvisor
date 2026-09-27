@@ -785,6 +785,112 @@ body {
   color: #fff;
 }
 
+/* Checkbox & Interactive Tracking */
+.bom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition);
+  vertical-align: middle;
+}
+
+.bom-checkbox:hover {
+  border-color: var(--accent);
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.bom-checkbox:checked {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+}
+
+.bom-checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  color: #000;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.bom-item-row {
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.bom-item-row.item-completed {
+  opacity: 0.65;
+  background: rgba(16, 185, 129, 0.02);
+}
+
+.bom-item-row.item-owned {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.text-strike {
+  text-decoration: line-through;
+  color: var(--text-faint) !important;
+}
+
+.text-free {
+  color: var(--accent-emerald) !important;
+  font-weight: 700;
+}
+
+/* Already Have Toggle Button */
+.btn-owned-toggle {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-dim);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-owned-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-owned-toggle.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--accent-emerald);
+}
+
+/* Status Pills */
+.status-pill {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.status-ready {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+}
+
+.status-needed {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-amber);
+}
+
 @media print {
   body {
     background: #fff !important;

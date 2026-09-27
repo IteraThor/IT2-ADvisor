@@ -940,14 +940,64 @@ function generateCustomBOM() {
     }
   }
 
-  const totalGrams = printedParts.reduce((acc, p) => acc + (p.estGrams || 0), 0);
+  // Initialize state map for items if not already set
+  if (!window.itemStates) window.itemStates = {};
+
+  function getItemKey(type, name) {
+    return `${type}_${name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}`;
+  }
+
+  // Calculate dynamic costs considering user's owned status
+  function calculateActiveTotals() {
+    let activePrintedCost = 0;
+    let activeHardwareCost = 0;
+    let activeElectronicsCost = 0;
+    let activeGrams = 0;
+
+    printedParts.forEach((p) => {
+      const key = getItemKey("print", p.name);
+      const isOwned = window.itemStates[key]?.owned;
+      if (!isOwned) {
+        activePrintedCost += p.costEur || 0;
+        activeGrams += p.estGrams || 0;
+      }
+    });
+
+    hardware.forEach((h) => {
+      const key = getItemKey("hardware", h.name);
+      const isOwned = window.itemStates[key]?.owned;
+      if (!isOwned) {
+        activeHardwareCost += h.costEur || 0;
+      }
+    });
+
+    electronics.forEach((e) => {
+      const key = getItemKey("elec", e.name);
+      const isOwned = window.itemStates[key]?.owned;
+      if (!isOwned) {
+        activeElectronicsCost += e.costEur || 0;
+      }
+    });
+
+    return {
+      activePrintedCost,
+      activeHardwareCost,
+      activeElectronicsCost,
+      activeTotalCost: activePrintedCost + activeHardwareCost + activeElectronicsCost,
+      activeGrams
+    };
+  }
+
+  const totals = calculateActiveTotals();
+
+  const totalGrams = totals.activeGrams;
   const totalFasteners = hardware.reduce((acc, h) => acc + (h.qty || 0), 0);
   const totalPrintedPieces = printedParts.reduce((acc, p) => acc + (p.qty || 0), 0);
 
-  const totalPrintedCost = printedParts.reduce((acc, p) => acc + (p.costEur || 0), 0);
-  const totalHardwareCost = hardware.reduce((acc, h) => acc + (h.costEur || 0), 0);
-  const totalElectronicsCost = electronics.reduce((acc, e) => acc + (e.costEur || 0), 0);
-  const totalCostEur = totalPrintedCost + totalHardwareCost + totalElectronicsCost;
+  const totalPrintedCost = totals.activePrintedCost;
+  const totalHardwareCost = totals.activeHardwareCost;
+  const totalElectronicsCost = totals.activeElectronicsCost;
+  const totalCostEur = totals.activeTotalCost;
 
   const summaryText = document.getElementById("config-summary-text");
   if (summaryText) {
@@ -982,6 +1032,18 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
   const container = document.getElementById("bom-tables-container");
   if (!container) return;
 
+  window.toggleItemCheck = (key) => {
+    if (!window.itemStates[key]) window.itemStates[key] = {};
+    window.itemStates[key].checked = !window.itemStates[key].checked;
+    generateCustomBOM();
+  };
+
+  window.toggleItemOwned = (key) => {
+    if (!window.itemStates[key]) window.itemStates[key] = {};
+    window.itemStates[key].owned = !window.itemStates[key].owned;
+    generateCustomBOM();
+  };
+
   container.innerHTML = `
     <div class="bom-card-group">
       <div class="bom-group-header">
@@ -994,11 +1056,13 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
       <table class="bom-table">
         <thead>
           <tr>
+            <th style="width: 40px; text-align: center;">Done</th>
             <th>Component</th>
             <th>Qty</th>
             <th>Material</th>
             <th>Est. Weight</th>
             <th>Est. Cost</th>
+            <th>Status / Own</th>
             <th>Makerworld</th>
           </tr>
         </thead>
@@ -1022,7 +1086,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
               .map((grp) => {
                 const headerRow = `
                   <tr class="project-group-row">
-                    <td colspan="6">
+                    <td colspan="8">
                       <div class="project-group-cell">
                         <span class="project-badge-title">
                           <span>📦</span>
@@ -1036,26 +1100,41 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
                   </tr>
                 `;
                 const itemRows = grp.items
-                  .map(
-                    (p) => `
-                  <tr>
+                  .map((p) => {
+                    const key = getItemKey("print", p.name);
+                    const state = window.itemStates[key] || {};
+                    const isChecked = !!state.checked;
+                    const isOwned = !!state.owned;
+
+                    return `
+                  <tr class="bom-item-row ${isChecked ? "item-completed" : ""} ${isOwned ? "item-owned" : ""}">
+                    <td style="text-align: center;">
+                      <input type="checkbox" class="bom-checkbox" ${isChecked ? "checked" : ""} onchange="window.toggleItemCheck('${key}')" title="Mark as printed / ready">
+                    </td>
                     <td>
                       <div class="part-name-cell">
-                        <span class="part-name-bold">${p.name}</span>
+                        <span class="part-name-bold ${isChecked ? "text-strike" : ""}">${p.name}</span>
                       </div>
                     </td>
                     <td><span class="qty-pill">${p.qty}x</span></td>
                     <td><span class="mat-tag ${p.material.includes("TPU") ? "mat-tpu" : "mat-pla"}">${p.material}</span></td>
                     <td><span class="weight-pill">${p.estGrams ? `~${p.estGrams}g` : "-"}</span></td>
-                    <td><span class="cost-pill">~${formatCurrency(p.costEur)}</span></td>
+                    <td>
+                      ${isOwned ? `<span class="cost-pill text-free">€0 (Owned)</span>` : `<span class="cost-pill">~${formatCurrency(p.costEur)}</span>`}
+                    </td>
+                    <td>
+                      <button type="button" class="btn-owned-toggle ${isOwned ? "active" : ""}" onclick="window.toggleItemOwned('${key}')">
+                        ${isOwned ? "✓ Already Have" : "I Have This"}
+                      </button>
+                    </td>
                     <td>
                       <a href="${p.modelUrl}" target="_blank" rel="noopener noreferrer" class="link-external">
                         #${p.modelId} ↗
                       </a>
                     </td>
                   </tr>
-                `
-                  )
+                `;
+                  })
                   .join("");
                 return headerRow + itemRows;
               })
@@ -1076,24 +1155,41 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
       <table class="bom-table">
         <thead>
           <tr>
+            <th style="width: 40px; text-align: center;">Done</th>
             <th>Item</th>
             <th>Qty</th>
             <th>Location</th>
             <th>Est. Cost</th>
+            <th>Status / Own</th>
           </tr>
         </thead>
         <tbody>
           ${hardware
-            .map(
-              (h) => `
-            <tr>
-              <td><span class="part-name-bold">${h.name}</span></td>
+            .map((h) => {
+              const key = getItemKey("hardware", h.name);
+              const state = window.itemStates[key] || {};
+              const isChecked = !!state.checked;
+              const isOwned = !!state.owned;
+
+              return `
+            <tr class="bom-item-row ${isChecked ? "item-completed" : ""} ${isOwned ? "item-owned" : ""}">
+              <td style="text-align: center;">
+                <input type="checkbox" class="bom-checkbox" ${isChecked ? "checked" : ""} onchange="window.toggleItemCheck('${key}')" title="Mark as acquired">
+              </td>
+              <td><span class="part-name-bold ${isChecked ? "text-strike" : ""}">${h.name}</span></td>
               <td><span class="qty-pill">${h.qty}x</span></td>
               <td class="part-notes-dim">${h.notes}</td>
-              <td><span class="cost-pill">~${formatCurrency(h.costEur)}</span></td>
+              <td>
+                ${isOwned ? `<span class="cost-pill text-free">€0 (Owned)</span>` : `<span class="cost-pill">~${formatCurrency(h.costEur)}</span>`}
+              </td>
+              <td>
+                <button type="button" class="btn-owned-toggle ${isOwned ? "active" : ""}" onclick="window.toggleItemOwned('${key}')">
+                  ${isOwned ? "✓ Already Have" : "I Have This"}
+                </button>
+              </td>
             </tr>
-          `
-            )
+          `;
+            })
             .join("")}
         </tbody>
       </table>
@@ -1110,28 +1206,45 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
       <table class="bom-table">
         <thead>
           <tr>
+            <th style="width: 40px; text-align: center;">Done</th>
             <th>Component</th>
             <th>Qty</th>
             <th>Source</th>
             <th>Est. Cost</th>
+            <th>Status / Own</th>
           </tr>
         </thead>
         <tbody>
           ${electronics
-            .map(
-              (e) => `
-            <tr>
+            .map((e) => {
+              const key = getItemKey("elec", e.name);
+              const state = window.itemStates[key] || {};
+              const isChecked = !!state.checked;
+              const isOwned = !!state.owned;
+
+              return `
+            <tr class="bom-item-row ${isChecked ? "item-completed" : ""} ${isOwned ? "item-owned" : ""}">
+              <td style="text-align: center;">
+                <input type="checkbox" class="bom-checkbox" ${isChecked ? "checked" : ""} onchange="window.toggleItemCheck('${key}')" title="Mark as acquired">
+              </td>
               <td>
                 <div class="part-name-cell">
-                  <span class="part-name-bold">${e.name}</span>
+                  <span class="part-name-bold ${isChecked ? "text-strike" : ""}">${e.name}</span>
                 </div>
               </td>
               <td><span class="qty-pill">${e.qty}x</span></td>
               <td class="part-notes-dim">${e.source}</td>
-              <td><span class="cost-pill">${e.costEur === 0 ? "Free" : `~${formatCurrency(e.costEur)}`}</span></td>
+              <td>
+                ${isOwned || e.costEur === 0 ? `<span class="cost-pill text-free">Free (Owned)</span>` : `<span class="cost-pill">~${formatCurrency(e.costEur)}</span>`}
+              </td>
+              <td>
+                <button type="button" class="btn-owned-toggle ${isOwned ? "active" : ""}" onclick="window.toggleItemOwned('${key}')">
+                  ${isOwned ? "✓ Already Have" : "I Have This"}
+                </button>
+              </td>
             </tr>
-          `
-            )
+          `;
+            })
             .join("")}
         </tbody>
       </table>
@@ -1141,20 +1254,40 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
       <div class="bom-group-header">
         <div class="group-title-row">
           <span class="group-icon">🛠️</span>
-          <h3 class="group-title">Tools</h3>
+          <h3 class="group-title">Tools Required</h3>
         </div>
       </div>
       <table class="bom-table">
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">Have</th>
+            <th>Tool</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
         <tbody>
           ${tools
-            .map(
-              (t) => `
-            <tr>
-              <td style="width: 35%;"><span class="part-name-bold">${t.name}</span></td>
+            .map((t) => {
+              const key = getItemKey("tool", t.name);
+              const state = window.itemStates[key] || {};
+              const isChecked = !!state.checked;
+
+              return `
+            <tr class="bom-item-row ${isChecked ? "item-completed" : ""}">
+              <td style="text-align: center;">
+                <input type="checkbox" class="bom-checkbox" ${isChecked ? "checked" : ""} onchange="window.toggleItemCheck('${key}')" title="Mark as available">
+              </td>
+              <td style="width: 35%;"><span class="part-name-bold ${isChecked ? "text-strike" : ""}">${t.name}</span></td>
               <td class="part-notes-dim">${t.notes}</td>
+              <td>
+                <span class="status-pill ${isChecked ? "status-ready" : "status-needed"}">
+                  ${isChecked ? "✓ Ready" : "Needed"}
+                </span>
+              </td>
             </tr>
-          `
-            )
+          `;
+            })
             .join("")}
         </tbody>
       </table>
