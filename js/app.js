@@ -1,547 +1,857 @@
 /**
- * IT2 System BOM Configurator Application Logic
- * Implements dependency solver, dynamic BOM calculation, presets, and exports.
+ * IT2 System Minimalist Card Questionnaire & BOM Engine
+ * Features dynamic branching questions, clean progressive transitions, and customized BOM output.
  */
 
-// Application State
-const state = {
-  mounting: "mount_baseplate_wall",
-  has_baseplate: true,
-  vision: "vision_3cam_ov9732",
-  ring: "ring_diy_standard",
-  lighting_mode: "lighting_standard_white",
-  compute: "compute_mini_pc",
-  cable_routing: "cable_routing_baseplate",
-  assembly_style: "fasteners_heat_inserts",
-  baseplate_addons: ["addon_tpu_dampeners", "addon_hardware_bay"],
-  activeTab: "all",
-  activePreset: "preset_pro_silent"
+// User Configuration State
+const userConfig = {
+  vision_mode: null, // "lens" | "3cam"
+  cam_model: "ov9732", // "ov9732" | "ov2710"
+  mount_type: null, // "wall" | "stand"
+  use_baseplate: null, // true | false
+  baseplate_addons: [], // ["tpu_dampeners", "hardware_bay", "ambient_wled"]
+  ring_type: null, // "plasma" | "corona" | "diy_std" | "diy_low"
+  lighting_mode: "white", // "white" | "wled"
+  host_compute: "existing_pc", // "existing_pc" | "mini_pc" | "pi"
+  assembly_style: null // "direct" | "inserts"
 };
 
-// Initialize Application
+// Navigation History Stack
+let questionHistory = [];
+let currentQuestionId = "q_vision";
+
+// Define the Branching Questions
+const QUESTIONS = {
+  q_vision: {
+    category: "Vision Architecture",
+    title: "How do you want to track your darts?",
+    subtitle: "Autodarts now supports single-smartphone tracking alongside the classic 3-camera rig.",
+    options: [
+      {
+        id: "opt_lens",
+        letter: "A",
+        title: "Autodarts Lens (Use My Smartphone)",
+        desc: "Single phone mounts directly to the light ring. Zero external cameras, zero USB cables, no dedicated PC needed!",
+        badge: "Ultra-Budget & Minimalist",
+        badgeType: "success",
+        action: () => {
+          userConfig.vision_mode = "lens";
+          userConfig.host_compute = "none";
+          return "q_mounting"; // skip camera models & compute questions!
+        }
+      },
+      {
+        id: "opt_3cam",
+        letter: "B",
+        title: "Classic 3-Camera Rig (IT2 High Performance)",
+        desc: "3 dedicated 3D-printed arms with 32x32 USB vision boards for tournament-grade dart tracking.",
+        badge: "Full Hardware Rig",
+        badgeType: "accent",
+        action: () => {
+          userConfig.vision_mode = "3cam";
+          return "q_cam_model";
+        }
+      }
+    ]
+  },
+
+  q_cam_model: {
+    category: "Camera Sensors",
+    title: "Which camera modules do you prefer?",
+    subtitle: "We exclusively recommend genuine HBV camera modules from AliExpress.",
+    options: [
+      {
+        id: "opt_ov9732",
+        letter: "A",
+        title: "HBV OV9732 (Recommended Budget)",
+        desc: "720p high-speed sensors. Extremely reliable dart detection with low CPU overhead.",
+        badge: "Best Value",
+        badgeType: "success",
+        action: () => {
+          userConfig.cam_model = "ov9732";
+          return "q_mounting";
+        }
+      },
+      {
+        id: "opt_ov2710",
+        letter: "B",
+        title: "HBV OV2710 (Premium 1080p)",
+        desc: "1080p crisp board view. Higher resolution visual feed for sharper monitoring.",
+        badge: "Crisp 1080p",
+        badgeType: "accent",
+        action: () => {
+          userConfig.cam_model = "ov2710";
+          return "q_mounting";
+        }
+      }
+    ]
+  },
+
+  q_mounting: {
+    category: "Mounting Environment",
+    title: "Where will your dartboard be set up?",
+    subtitle: "This dictates the mounting brackets and structural anchor required.",
+    options: [
+      {
+        id: "opt_wall",
+        letter: "A",
+        title: "On a Wall (Drywall, Brick, or Backboard)",
+        desc: "Permanent wall setup. You can choose direct wall mounting or the IT2 4-part Baseplate.",
+        badge: "Permanent Setup",
+        badgeType: "neutral",
+        action: () => {
+          userConfig.mount_type = "wall";
+          return "q_wall_baseplate";
+        }
+      },
+      {
+        id: "opt_stand",
+        letter: "B",
+        title: "On a Portable Dart Stand (Tripod)",
+        desc: "Mobile setups (e.g. Winmau Xtreme 2). Natively requires the IT2 Baseplate for rigidity.",
+        badge: "Stand Native • 0 Wall Holes",
+        badgeType: "accent",
+        action: () => {
+          userConfig.mount_type = "stand";
+          userConfig.use_baseplate = true;
+          return "q_baseplate_addons"; // auto-selects baseplate!
+        }
+      }
+    ]
+  },
+
+  q_wall_baseplate: {
+    category: "Wall Mounting Strategy",
+    title: "Do you want to use the IT2 4-part Baseplate?",
+    subtitle: "The Baseplate acts as a rigid master anchor between the wall, dartboard, and IT2 system.",
+    options: [
+      {
+        id: "opt_baseplate_yes",
+        letter: "A",
+        title: "Yes, use the Baseplate (Highly Recommended)",
+        desc: "Drastically protects walls (only 3 holes drilled instead of 8), hides all wiring, and unlocks sound dampening.",
+        badge: "Only 3 Holes • Clean Cables",
+        badgeType: "success",
+        action: () => {
+          userConfig.use_baseplate = true;
+          return "q_baseplate_addons";
+        }
+      },
+      {
+        id: "opt_baseplate_no",
+        letter: "B",
+        title: "No, Direct Wall Mount (Minimalist)",
+        desc: "Mounts arms and board directly to the wall. Slightly fewer 3D printed parts, but requires drilling ~8 holes.",
+        badge: "8 Wall Holes Needed",
+        badgeType: "warning",
+        action: () => {
+          userConfig.use_baseplate = false;
+          userConfig.baseplate_addons = [];
+          return "q_ring";
+        }
+      }
+    ]
+  },
+
+  q_baseplate_addons: {
+    category: "Baseplate Upgrades",
+    title: "Which Baseplate add-ons would you like?",
+    subtitle: "Select all that you want to include, or choose None.",
+    isMultiSelect: true,
+    options: [
+      {
+        id: "tpu_dampeners",
+        title: "TPU 95A Sound & Vibration Dampeners",
+        desc: "Flexible shock-absorbing inserts in the baseplate to mute dart impact noise into walls.",
+        badge: "Acoustic Silence",
+        badgeType: "success"
+      },
+      {
+        id: "hardware_bay",
+        title: "Hidden Rear Hardware Bay",
+        desc: "Integrated bracket behind the board to conceal a Mini-PC, Raspberry Pi, or WLED controller.",
+        badge: "Concealed Hardware",
+        badgeType: "accent"
+      },
+      {
+        id: "ambient_wled",
+        title: "Perimeter Ambient Wall Halo Glow",
+        desc: "Perimeter channel for addressable LED strip creating a soft halo glow on the wall.",
+        badge: "Ambient Halo",
+        badgeType: "accent"
+      }
+    ],
+    onContinue: (selectedIds) => {
+      userConfig.baseplate_addons = selectedIds;
+      return "q_ring";
+    }
+  },
+
+  q_ring: {
+    category: "Light Ring & Frame",
+    title: "Which light ring frame will you use?",
+    subtitle: "The IT2 system geometry is matched 1:1 to the Winmau Plasma pattern.",
+    options: [
+      {
+        id: "opt_ring_plasma",
+        letter: "A",
+        title: "Winmau Plasma Light Ring (Commercial)",
+        desc: "Native direct fit! Camera arms bolt directly to the Plasma frame. Needs 0 adapters.",
+        badge: "Native Direct Fit",
+        badgeType: "success",
+        action: () => {
+          userConfig.ring_type = "plasma";
+          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+        }
+      },
+      {
+        id: "opt_ring_corona",
+        letter: "B",
+        title: "Target Corona Light Ring (Commercial)",
+        desc: "Converts the Target Corona magnetic ring to IT2 using 3x 3D-printed conversion brackets.",
+        badge: "Includes 3x Adapters",
+        badgeType: "neutral",
+        action: () => {
+          userConfig.ring_type = "corona";
+          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+        }
+      },
+      {
+        id: "opt_ring_diy_std",
+        letter: "C",
+        title: "IT2 DIY 3D-Printed Ring (Standard Ceiling ≥ 2.0m)",
+        desc: "Full 360° circular slim light ring with snap-on curved diffusers. Slimmest 3D design available.",
+        badge: "Full 360° Circle",
+        badgeType: "accent",
+        action: () => {
+          userConfig.ring_type = "diy_std";
+          return "q_lighting_mode";
+        }
+      },
+      {
+        id: "opt_ring_diy_low",
+        letter: "D",
+        title: "IT2 DIY Flat-Top Ring (Low Ceiling ≤ 2.0m)",
+        desc: "Flattened top arch profile engineered specifically for low basements and attic rooms under 2 meters high.",
+        badge: "Fits Low Ceilings ≤ 2.0m",
+        badgeType: "warning",
+        action: () => {
+          userConfig.ring_type = "diy_low";
+          return "q_lighting_mode";
+        }
+      }
+    ]
+  },
+
+  q_lighting_mode: {
+    category: "Ring Illumination",
+    title: "What kind of lighting do you want inside the DIY Ring?",
+    subtitle: "You can choose clean standard white or reactive gameplay animations.",
+    options: [
+      {
+        id: "opt_light_white",
+        letter: "A",
+        title: "Clean Functional White Illumination",
+        desc: "Flicker-free white LED strip (COB or SMD) with diffusers for shadow-free dart tracking.",
+        badge: "Standard",
+        badgeType: "neutral",
+        action: () => {
+          userConfig.lighting_mode = "white";
+          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+        }
+      },
+      {
+        id: "opt_light_wled",
+        letter: "B",
+        title: "Dual-Channel Reactive WLED Lighting",
+        desc: "Clean board light + addressable RGB LEDs running WLED. Flashes and animates to 180s, checkouts & hits.",
+        badge: "Arcade Reactive",
+        badgeType: "accent",
+        action: () => {
+          userConfig.lighting_mode = "wled";
+          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+        }
+      }
+    ]
+  },
+
+  q_compute: {
+    category: "Host Hardware",
+    title: "How will you run the Autodarts software?",
+    subtitle: "The 3 USB camera feeds need to be processed by a computer.",
+    options: [
+      {
+        id: "opt_compute_existing",
+        letter: "A",
+        title: "Use My Existing Desktop PC or Laptop",
+        desc: "Connects across the room using an active USB extension or powered hub. €0 added computer cost.",
+        badge: "€0 Added Cost",
+        badgeType: "success",
+        action: () => {
+          userConfig.host_compute = "existing_pc";
+          return "q_assembly";
+        }
+      },
+      {
+        id: "opt_compute_mini_pc",
+        letter: "B",
+        title: "Dedicated Refurbished Mini-PC",
+        desc: "Compact Intel N95/N100 or refurbished HP ProDesk / Dell Tiny. Silent, dedicated, snaps into hardware bay.",
+        badge: "Community Favorite",
+        badgeType: "accent",
+        action: () => {
+          userConfig.host_compute = "mini_pc";
+          return "q_assembly";
+        }
+      },
+      {
+        id: "opt_compute_pi",
+        letter: "C",
+        title: "Raspberry Pi 4 / 5",
+        desc: "Single-board computer running Linux Autodarts. Compact and energy efficient.",
+        badge: "Compact SBC",
+        badgeType: "neutral",
+        action: () => {
+          userConfig.host_compute = "pi";
+          return "q_assembly";
+        }
+      }
+    ]
+  },
+
+  q_assembly: {
+    category: "Fasteners & Assembly",
+    title: "How do you want to fasten your 3D printed parts?",
+    subtitle: "IT2 supports both heat-set brass threaded inserts and direct self-tapping screws.",
+    options: [
+      {
+        id: "opt_fastener_direct",
+        letter: "A",
+        title: "Direct Self-Tapping (No Inserts)",
+        desc: "Taps M4 cylindrical screws directly into plastic pilot holes. Zero brass inserts and zero soldering iron needed!",
+        badge: "Beginner Friendly • €0 Inserts",
+        badgeType: "success",
+        action: () => {
+          userConfig.assembly_style = "direct";
+          return "FINISHED";
+        }
+      },
+      {
+        id: "opt_fastener_inserts",
+        letter: "B",
+        title: "Brass Heat-Set Threaded Inserts (M4 / M6)",
+        desc: "Melted into 3D prints using a soldering iron. Rock-solid and can be assembled and disassembled endlessly.",
+        badge: "Heavy Duty & Reusable",
+        badgeType: "accent",
+        action: () => {
+          userConfig.assembly_style = "inserts";
+          return "FINISHED";
+        }
+      }
+    ]
+  }
+};
+
+// Initialize App
 document.addEventListener("DOMContentLoaded", () => {
-  renderPresets();
-  renderConfigurator();
-  bindGlobalEvents();
-  applyRulesAndCalculateBOM();
+  showQuestion(currentQuestionId);
+  bindNavigationEvents();
 });
 
-// Render Quick Preset Buttons
-function renderPresets() {
-  const container = document.getElementById("preset-pills");
+// Render the active question card
+function showQuestion(qId) {
+  const q = QUESTIONS[qId];
+  if (!q) return;
+
+  currentQuestionId = qId;
+  const container = document.getElementById("question-card");
   if (!container) return;
 
-  container.innerHTML = IT2_CATALOG.presets
-    .map(
-      (preset) => `
-    <button type="button" 
-            class="preset-pill ${state.activePreset === preset.id ? "active" : ""}" 
-            data-preset="${preset.id}"
-            id="preset-${preset.id}">
-      <span class="preset-icon">${preset.icon}</span>
-      <div class="preset-info">
-        <span class="preset-name">${preset.name}</span>
-        <span class="preset-tagline">${preset.tagline}</span>
-      </div>
-    </button>
-  `
-    )
-    .join("");
+  // Update Progress Meta
+  const totalQuestionsEstimate = userConfig.vision_mode === "lens" ? 5 : 7;
+  const currentStepNum = questionHistory.length + 1;
+  const progressPercent = Math.min(100, Math.round((currentStepNum / totalQuestionsEstimate) * 100));
 
-  container.querySelectorAll(".preset-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const presetId = btn.getAttribute("data-preset");
-      loadPreset(presetId);
-    });
-  });
-}
+  const counterEl = document.getElementById("step-counter");
+  if (counterEl) counterEl.textContent = `Question ${currentStepNum}`;
 
-// Load a specific preset configuration
-function loadPreset(presetId) {
-  const preset = IT2_CATALOG.presets.find((p) => p.id === presetId);
-  if (!preset) return;
+  const fillEl = document.getElementById("progress-fill");
+  if (fillEl) fillEl.style.width = `${progressPercent}%`;
 
-  Object.assign(state, JSON.parse(JSON.stringify(preset.config)));
-  state.activePreset = presetId;
-
-  // Refresh preset UI active state
-  document.querySelectorAll(".preset-pills .preset-pill").forEach((el) => {
-    el.classList.toggle("active", el.getAttribute("data-preset") === presetId);
-  });
-
-  renderConfigurator();
-  applyRulesAndCalculateBOM();
-}
-
-// Render the progressive form cards
-function renderConfigurator() {
-  renderRadioGroup("mounting-options", "mounting", IT2_CATALOG.options.mounting);
-  renderRadioGroup("vision-options", "vision", IT2_CATALOG.options.vision);
-  renderRadioGroup("ring-options", "ring", IT2_CATALOG.options.ring);
-  renderRadioGroup("lighting-options", "lighting_mode", IT2_CATALOG.options.lighting_mode);
-  renderRadioGroup("compute-options", "compute", IT2_CATALOG.options.compute);
-  renderRadioGroup("assembly-options", "assembly_style", IT2_CATALOG.options.assembly_style);
-  renderBaseplateAddons();
-  updateConditionalVisibility();
-}
-
-// Render a single radio card group
-function renderRadioGroup(containerId, stateKey, options) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  container.innerHTML = options
-    .map((opt) => {
-      const isSelected = state[stateKey] === opt.id;
-      return `
-      <label class="choice-card ${isSelected ? "selected" : ""}" 
-             data-key="${stateKey}" 
-             data-val="${opt.id}"
-             id="card-${opt.id}">
-        <div class="card-radio">
-          <input type="radio" name="${stateKey}" value="${opt.id}" ${isSelected ? "checked" : ""}>
-          <span class="radio-custom"></span>
-        </div>
-        <div class="card-content">
-          <div class="card-header-row">
-            <span class="card-title">${opt.title}</span>
-            ${opt.badge ? `<span class="badge badge-${opt.badgeType || "neutral"}">${opt.badge}</span>` : ""}
-          </div>
-          <p class="card-desc">${opt.desc}</p>
-        </div>
-      </label>
-    `;
-    })
-    .join("");
-
-  container.querySelectorAll(".choice-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const key = card.getAttribute("data-key");
-      const val = card.getAttribute("data-val");
-      state[key] = val;
-      state.activePreset = null; // Custom configuration
-      document.querySelectorAll(".preset-pill").forEach((p) => p.classList.remove("active"));
-      renderConfigurator();
-      applyRulesAndCalculateBOM();
-    });
-  });
-}
-
-// Render Baseplate Addon Checkboxes
-function renderBaseplateAddons() {
-  const container = document.getElementById("baseplate-addons-options");
-  if (!container) return;
-
-  container.innerHTML = IT2_CATALOG.options.baseplate_addons
-    .map((addon) => {
-      const isChecked = state.baseplate_addons.includes(addon.id);
-      const isDisabled = !state.has_baseplate;
-      return `
-      <label class="choice-card checkbox-card ${isChecked && !isDisabled ? "selected" : ""} ${isDisabled ? "disabled" : ""}"
-             data-addon="${addon.id}"
-             id="addon-${addon.id}">
-        <div class="card-radio">
-          <input type="checkbox" value="${addon.id}" ${isChecked && !isDisabled ? "checked" : ""} ${isDisabled ? "disabled" : ""}>
-          <span class="checkbox-custom"></span>
-        </div>
-        <div class="card-content">
-          <div class="card-header-row">
-            <span class="card-title">${addon.title}</span>
-            ${addon.badge ? `<span class="badge badge-${addon.badgeType || "accent"}">${addon.badge}</span>` : ""}
-          </div>
-          <p class="card-desc">${addon.desc}</p>
-          ${isDisabled ? `<span class="disabled-hint">⚠️ Requires IT2 Baseplate to be selected above</span>` : ""}
-        </div>
-      </label>
-    `;
-    })
-    .join("");
-
-  if (state.has_baseplate) {
-    container.querySelectorAll(".choice-card").forEach((card) => {
-      card.addEventListener("click", (e) => {
-        e.preventDefault();
-        const addonId = card.getAttribute("data-addon");
-        if (state.baseplate_addons.includes(addonId)) {
-          state.baseplate_addons = state.baseplate_addons.filter((id) => id !== addonId);
-        } else {
-          state.baseplate_addons.push(addonId);
-        }
-        state.activePreset = null;
-        document.querySelectorAll(".preset-pill").forEach((p) => p.classList.remove("active"));
-        renderBaseplateAddons();
-        applyRulesAndCalculateBOM();
-      });
-    });
+  const backBtn = document.getElementById("btn-back");
+  if (backBtn) {
+    backBtn.style.visibility = questionHistory.length > 0 ? "visible" : "hidden";
   }
-}
 
-// Update UI state based on dynamic rules
-function updateConditionalVisibility() {
-  // Stand requires baseplate
-  if (state.mounting === "mount_baseplate_stand" || state.mounting === "mount_baseplate_wall") {
-    state.has_baseplate = true;
+  // Handle Multi-Select vs Single-Select Card
+  if (q.isMultiSelect) {
+    renderMultiSelectQuestion(container, q);
   } else {
-    state.has_baseplate = false;
-  }
-
-  // Visual cues for baseplate section
-  const baseplateSection = document.getElementById("section-baseplate-addons");
-  if (baseplateSection) {
-    baseplateSection.classList.toggle("section-dimmed", !state.has_baseplate);
-  }
-
-  // Autodarts lens eliminates compute & routing
-  const isLens = state.vision === "vision_autodarts_lens";
-  const computeSection = document.getElementById("section-compute");
-  if (computeSection) {
-    computeSection.classList.toggle("section-dimmed", isLens);
-    const notice = document.getElementById("lens-compute-notice");
-    if (notice) notice.style.display = isLens ? "flex" : "none";
+    renderSingleSelectQuestion(container, q);
   }
 }
 
-// The core BOM Calculation and Rules Engine
-function applyRulesAndCalculateBOM() {
-  const isLens = state.vision === "vision_autodarts_lens";
-  const isStand = state.mounting === "mount_baseplate_stand";
-  const isDirectWall = state.mounting === "mount_direct_wall";
-  const isBaseplateWall = state.mounting === "mount_baseplate_wall";
-  const hasBaseplate = isStand || isBaseplateWall;
-  const isDirectTapping = state.assembly_style === "fasteners_direct_tapping";
+// Render Single-Select Question
+function renderSingleSelectQuestion(container, q) {
+  container.innerHTML = `
+    <span class="q-category-tag">${q.category}</span>
+    <h2 class="q-title">${q.title}</h2>
+    <p class="q-subtitle">${q.subtitle}</p>
 
-  // Calculate Wall Holes
+    <div class="options-list">
+      ${q.options
+        .map(
+          (opt) => `
+        <button type="button" class="option-item" data-opt="${opt.id}" id="opt-${opt.id}">
+          <span class="option-letter">${opt.letter}</span>
+          <div class="option-text-wrap">
+            <div class="option-title-row">
+              <span class="option-title">${opt.title}</span>
+              ${opt.badge ? `<span class="option-badge badge-${opt.badgeType || "neutral"}">${opt.badge}</span>` : ""}
+            </div>
+            <p class="option-desc">${opt.desc}</p>
+          </div>
+        </button>
+      `
+        )
+        .join("")}
+    </div>
+  `;
+
+  container.querySelectorAll(".option-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const optId = btn.getAttribute("data-opt");
+      const opt = q.options.find((o) => o.id === optId);
+      if (!opt) return;
+
+      btn.classList.add("selected");
+      const nextQId = opt.action();
+
+      setTimeout(() => {
+        questionHistory.push(currentQuestionId);
+        if (nextQId === "FINISHED") {
+          finishQuestionnaire();
+        } else {
+          showQuestion(nextQId);
+        }
+      }, 160);
+    });
+  });
+}
+
+// Render Multi-Select Question
+function renderMultiSelectQuestion(container, q) {
+  let selected = [...userConfig.baseplate_addons];
+
+  container.innerHTML = `
+    <span class="q-category-tag">${q.category}</span>
+    <h2 class="q-title">${q.title}</h2>
+    <p class="q-subtitle">${q.subtitle}</p>
+
+    <div class="options-list" id="multi-options-list">
+      ${q.options
+        .map((opt) => {
+          const isChecked = selected.includes(opt.id);
+          return `
+          <button type="button" class="option-item ${isChecked ? "selected" : ""}" data-opt="${opt.id}" id="multi-${opt.id}">
+            <span class="option-letter">${isChecked ? "✓" : "○"}</span>
+            <div class="option-text-wrap">
+              <div class="option-title-row">
+                <span class="option-title">${opt.title}</span>
+                ${opt.badge ? `<span class="option-badge badge-${opt.badgeType || "neutral"}">${opt.badge}</span>` : ""}
+              </div>
+              <p class="option-desc">${opt.desc}</p>
+            </div>
+          </button>
+        `;
+        })
+        .join("")}
+    </div>
+
+    <div class="multi-actions">
+      <button type="button" class="btn-continue" id="btn-multi-continue">
+        Continue →
+      </button>
+    </div>
+  `;
+
+  // Toggle selections
+  container.querySelectorAll(".option-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const optId = btn.getAttribute("data-opt");
+      if (selected.includes(optId)) {
+        selected = selected.filter((id) => id !== optId);
+        btn.classList.remove("selected");
+        btn.querySelector(".option-letter").textContent = "○";
+      } else {
+        selected.push(optId);
+        btn.classList.add("selected");
+        btn.querySelector(".option-letter").textContent = "✓";
+      }
+    });
+  });
+
+  // Continue button
+  const continueBtn = document.getElementById("btn-multi-continue");
+  if (continueBtn) {
+    continueBtn.addEventListener("click", () => {
+      const nextQId = q.onContinue(selected);
+      questionHistory.push(currentQuestionId);
+      if (nextQId === "FINISHED") {
+        finishQuestionnaire();
+      } else {
+        showQuestion(nextQId);
+      }
+    });
+  }
+}
+
+// Bind Navigation
+function bindNavigationEvents() {
+  const backBtn = document.getElementById("btn-back");
+  if (backBtn) {
+    backBtn.addEventListener("click", () => {
+      if (questionHistory.length > 0) {
+        const prevQId = questionHistory.pop();
+        showQuestion(prevQId);
+      }
+    });
+  }
+
+  const restartBtn = document.getElementById("btn-restart");
+  if (restartBtn) {
+    restartBtn.addEventListener("click", () => {
+      questionHistory = [];
+      document.getElementById("screen-bom").style.display = "none";
+      document.getElementById("screen-questionnaire").style.display = "block";
+      showQuestion("q_vision");
+    });
+  }
+
+  // Export buttons
+  const copyBtn = document.getElementById("btn-copy-bom");
+  if (copyBtn) copyBtn.addEventListener("click", () => copyBOMToClipboard());
+
+  const csvBtn = document.getElementById("btn-export-csv");
+  if (csvBtn) csvBtn.addEventListener("click", () => exportBOMToCSV());
+
+  const printBtn = document.getElementById("btn-print-bom");
+  if (printBtn) printBtn.addEventListener("click", () => window.print());
+}
+
+// Finish Questionnaire and Reveal BOM
+function finishQuestionnaire() {
+  document.getElementById("screen-questionnaire").style.display = "none";
+  const bomScreen = document.getElementById("screen-bom");
+  bomScreen.style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  generateCustomBOM();
+}
+
+// Calculate the Custom BOM based on answers
+function generateCustomBOM() {
+  const isLens = userConfig.vision_mode === "lens";
+  const isStand = userConfig.mount_type === "stand";
+  const hasBaseplate = userConfig.use_baseplate || isStand;
+  const isDirectWall = userConfig.mount_type === "wall" && !hasBaseplate;
+  const isDirectTapping = userConfig.assembly_style === "direct";
+
+  // Wall Drilling Impact
   let wallHoles = 0;
   if (isDirectWall) wallHoles = 8;
-  else if (isBaseplateWall) wallHoles = 3;
+  else if (hasBaseplate && !isStand) wallHoles = 3;
   else if (isStand) wallHoles = 0;
 
-  // 1. 3D PRINTED PARTS
+  // 1. 3D Printed Parts
   const printedParts = [];
 
-  // Baseplate parts
   if (hasBaseplate) {
     printedParts.push({
       name: "IT2 4-Segment Interlocking Baseplate",
       qty: 1,
-      material: "PLA or PETG",
-      notes: "Heavy-duty 4-part backboard structure",
-      estGrams: 480,
-      modelUrl: IT2_CATALOG.system.makerworld_baseplate_url,
-      modelId: "2782096"
+      material: "PLA / PETG",
+      notes: "Heavy-duty backboard frame for dartboard & IT2 arms",
+      modelId: "2782096",
+      modelUrl: "https://makerworld.com/en/models/2782096",
+      estGrams: 480
     });
   }
 
-  // Baseplate Add-ons
-  if (hasBaseplate && state.baseplate_addons.includes("addon_tpu_dampeners")) {
+  if (hasBaseplate && userConfig.baseplate_addons.includes("tpu_dampeners")) {
     printedParts.push({
-      name: "Circular Sound & Vibration Dampener Pads",
+      name: "Circular Sound Dampener Inserts",
       qty: 3,
       material: "TPU 95A (Flexible)",
-      notes: "Mutes dartboard thud into walls",
-      estGrams: 45,
-      modelUrl: IT2_CATALOG.system.makerworld_baseplate_url,
-      modelId: "2782096"
+      notes: "Absorbs dart impact thud from traveling into wall",
+      modelId: "2782096",
+      modelUrl: "https://makerworld.com/en/models/2782096",
+      estGrams: 45
     });
   }
 
-  if (hasBaseplate && state.baseplate_addons.includes("addon_hardware_bay")) {
+  if (hasBaseplate && userConfig.baseplate_addons.includes("hardware_bay")) {
     printedParts.push({
       name: "Rear Hidden Hardware Bay Bracket",
       qty: 1,
-      material: "PLA or PETG",
-      notes: "Conceals Mini-PC / Pi / WLED controller",
-      estGrams: 75,
-      modelUrl: IT2_CATALOG.system.makerworld_baseplate_url,
-      modelId: "2782096"
+      material: "PLA / PETG",
+      notes: "Conceals Mini-PC, Pi, or WLED controller behind board",
+      modelId: "2782096",
+      modelUrl: "https://makerworld.com/en/models/2782096",
+      estGrams: 75
     });
   }
 
-  // Vision Parts
   if (isLens) {
     printedParts.push({
-      name: "IT2 Calibrated Ring-Mounted Phone Mount",
+      name: "IT2 Ring-Mounted Calibrated Phone Mount",
       qty: 1,
-      material: "PLA or PETG",
-      notes: "Rigid phone bracket at calibrated angle",
-      estGrams: 65,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      material: "PLA / PETG",
+      notes: "Rigid phone mount at calibrated angle pointing at dartboard",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 65
     });
   } else {
-    // 3-camera arms
     printedParts.push({
       name: "IT2 Camera Arm & Pod Assembly",
       qty: 3,
-      material: "PLA or PETG",
+      material: "PLA / PETG",
       notes: "Bolts directly to Plasma pattern at 120°",
-      estGrams: 160,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 160
     });
   }
 
-  // Ring Parts
-  if (state.ring === "ring_diy_standard") {
+  if (userConfig.ring_type === "diy_std") {
     printedParts.push({
       name: "IT2 DIY Light Ring Segments (Full 360°)",
       qty: 4,
-      material: "PLA or PETG",
-      notes: "Circular light ring segments (Ceiling ≥ 2.0m)",
-      estGrams: 280,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      material: "PLA / PETG",
+      notes: "Slim circular light ring profile",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 280
     });
     printedParts.push({
       name: "IT2 Snap-On Curved Light Diffusers",
       qty: 4,
       material: "PLA Clear / Translucent White",
-      notes: "Glides over LEDs for glare-free vision",
-      estGrams: 50,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      notes: "Diffuses LEDs for zero glare in camera sensors",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 50
     });
-  } else if (state.ring === "ring_diy_low_ceiling") {
+  } else if (userConfig.ring_type === "diy_low") {
     printedParts.push({
       name: "IT2 DIY Flat-Top Ring Segments (Low Ceiling)",
       qty: 4,
-      material: "PLA or PETG",
-      notes: "Flattened top profile for ceilings ≤ 2.0m",
-      estGrams: 270,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      material: "PLA / PETG",
+      notes: "Flattened top arch profile for rooms ≤ 2.0m tall",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 270
     });
     printedParts.push({
       name: "IT2 Snap-On Curved Light Diffusers",
       qty: 4,
       material: "PLA Clear / Translucent White",
-      notes: "Glides over LEDs for glare-free vision",
-      estGrams: 50,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      notes: "Diffuses LEDs for zero glare in camera sensors",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 50
     });
-  } else if (state.ring === "ring_target_corona") {
+  } else if (userConfig.ring_type === "corona") {
     printedParts.push({
       name: "IT2 Target Corona Conversion Adapters",
       qty: 3,
-      material: "PLA or PETG",
-      notes: "Converts Target Corona magnetic frame to IT2",
-      estGrams: 70,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      material: "PLA / PETG",
+      notes: "Clamps to Target Corona magnetic frame",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 70
     });
   }
 
-  // Cable routing clips (if direct wall and multi-cam)
   if (isDirectWall && !isLens) {
     printedParts.push({
       name: "IT2 Light Ring Snap-On Cable Clips",
       qty: 6,
-      material: "PLA or PETG",
-      notes: "Guides top 2 camera wires down the ring",
-      estGrams: 15,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      material: "PLA / PETG",
+      notes: "Routes camera cables down ring to bottom Y-exit",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 15
     });
     printedParts.push({
       name: "IT2 Bottom Y-Split Cable Exit Guide",
       qty: 1,
-      material: "PLA or PETG",
-      notes: "Clean single exit for bundled USB cables",
-      estGrams: 12,
-      modelUrl: IT2_CATALOG.system.makerworld_system_url,
-      modelId: "1334165"
+      material: "PLA / PETG",
+      notes: "Clean bundled exit for 3 USB camera cables",
+      modelId: "1334165",
+      modelUrl: "https://makerworld.com/en/models/1334165",
+      estGrams: 12
     });
   }
 
-  // 2. HARDWARE & FASTENERS
+  // 2. Hardware & Fasteners
   const hardware = [];
 
-  // M4x10mm Cylindrical Screws (DIN 912)
   let m4Count = 0;
   if (!isLens) {
-    // 3 arms to ring or plasma
-    m4Count += state.ring === "ring_winmau_plasma" ? 6 : 12;
+    m4Count += userConfig.ring_type === "plasma" ? 6 : 12;
   }
-  if (state.ring === "ring_target_corona") {
-    m4Count += 6; // corona adapters
-  }
+  if (userConfig.ring_type === "corona") m4Count += 6;
   if (hasBaseplate) {
-    m4Count += 8; // baseplate segment joints
-    if (state.baseplate_addons.includes("addon_hardware_bay")) {
-      m4Count += 2; // hardware bracket
-    }
+    m4Count += 8;
+    if (userConfig.baseplate_addons.includes("hardware_bay")) m4Count += 2;
   }
   if (m4Count > 0) {
     hardware.push({
       name: "Cylindrical Screws M4x10mm (DIN 912 / ISO 4762)",
       qty: m4Count,
-      type: "Fastener",
-      notes: "Primary mechanical fastener for joints and arms"
+      notes: "Primary mechanical screws for arms and joints"
     });
   }
 
-  // M2x6mm Cylindrical Screws (DIN 912) - for camera PCBs
   if (!isLens) {
     hardware.push({
       name: "Cylindrical Screws M2x6mm (DIN 912 / ISO 4762)",
       qty: 6,
-      type: "Fastener",
       notes: "2 screws per 32x32 camera PCB mount"
     });
   }
 
-  // M4 Heat Inserts
   if (!isDirectTapping) {
-    let m4InsertCount = 0;
-    if (!isLens) m4InsertCount += 12; // camera arms and ring
-    if (hasBaseplate) m4InsertCount += 8; // baseplate joints
-    if (m4InsertCount > 0) {
+    let m4Inserts = 0;
+    if (!isLens) m4Inserts += 12;
+    if (hasBaseplate) m4Inserts += 8;
+    if (m4Inserts > 0) {
       hardware.push({
-        name: "M4 Heat-Set Brass Inserts (6.3mm OD, max 9mm length)",
-        qty: m4InsertCount,
-        type: "Thread Insert",
+        name: "M4 Brass Heat-Set Inserts (6.3mm OD, max 9mm length)",
+        qty: m4Inserts,
         notes: "Melted into 3D prints for reusable steel threads"
       });
     }
   }
 
-  // M6 Heat Inserts (Mandatory for Rota Lock / Stand on Baseplate)
   if (hasBaseplate) {
     const m6Count = isStand ? 7 : 3;
     hardware.push({
-      name: "M6 Heat-Set Brass Inserts (8mm OD)",
+      name: "M6 Brass Heat-Set Inserts (8mm OD)",
       qty: m6Count,
-      type: "Thread Insert",
       notes: isStand ? "7x mandatory for stand brackets & Rota-Locks" : "3x mandatory for Rota-Lock levelers"
     });
   }
 
-  // Wall screws
-  if (isBaseplateWall) {
+  if (hasBaseplate && !isStand) {
     hardware.push({
       name: "4.0mm Wood / Wall Screws + Plugs",
       qty: 3,
-      type: "Wall Anchor",
       notes: "Anchors baseplate securely with only 3 holes"
     });
   } else if (isDirectWall) {
     hardware.push({
       name: "4.0mm Wood / Wall Screws + Plugs",
       qty: 8,
-      type: "Wall Anchor",
       notes: "6 for IT2 arm brackets + 2 for board bracket"
     });
   }
 
-  // 3. ELECTRONICS & CAMERAS
+  // 3. Electronics & Vision
   const electronics = [];
 
   if (!isLens) {
     const camName =
-      state.vision === "vision_3cam_ov2710"
+      userConfig.cam_model === "ov2710"
         ? "HBV OV2710 1080p 32x32 USB Camera Modules"
         : "HBV OV9732 720p 32x32 USB Camera Modules";
     electronics.push({
       name: camName,
       qty: 3,
-      category: "Vision",
-      notes: "Snap outer 38x38 frame to 32x32mm with pliers",
+      notes: "Snap outer perforated 38x38 frame to 32x32mm with pliers",
       source: "HBV Store (AliExpress / Amazon)"
     });
     electronics.push({
       name: "USB Camera Connecting Cables (1.5m - 2m)",
       qty: 3,
-      category: "Cabling",
       notes: "Included with HBV camera kits",
       source: "Included with cameras"
     });
   }
 
-  // Ring LEDs
-  if (state.ring === "ring_diy_standard" || state.ring === "ring_diy_low_ceiling") {
+  if (userConfig.ring_type === "diy_std" || userConfig.ring_type === "diy_low") {
     electronics.push({
       name: "White High-CRI LED Strip (1.5m length)",
       qty: 1,
-      category: "Lighting",
       notes: "6000K daylight white, 12V or 5V",
       source: "AliExpress / Amazon"
     });
     electronics.push({
-      name: "12V / 5V 2A DC Power Supply + Barrel Jack",
+      name: "12V / 5V 2A DC Power Supply with Barrel Jack",
       qty: 1,
-      category: "Power",
       notes: "Powers LED ring illumination",
       source: "Standard electronics"
     });
   }
 
-  // Reactive WLED
-  if (state.lighting_mode === "lighting_reactive_wled") {
+  if (userConfig.lighting_mode === "wled") {
     electronics.push({
       name: "ESP32 Development Board (Pre-flashed WLED)",
       qty: 1,
-      category: "Controller",
       notes: "Controls reactive game animations via WiFi / UDP",
       source: "AliExpress / Amazon"
     });
     electronics.push({
       name: "WS2812B / SK6812 Addressable 5V LED Strip (1.5m)",
       qty: 1,
-      category: "Lighting",
       notes: "Runs inside reactive channel for game celebrations",
       source: "AliExpress / Amazon"
     });
     electronics.push({
       name: "5V 4A Dedicated Power Supply",
       qty: 1,
-      category: "Power",
-      notes: "Adequate current for ESP32 and addressable LEDs",
+      notes: "Powers ESP32 and addressable LEDs",
       source: "Electronics supplier"
     });
   }
 
-  // Baseplate Ambient Halo
-  if (hasBaseplate && state.baseplate_addons.includes("addon_baseplate_ambient_wled")) {
+  if (hasBaseplate && userConfig.baseplate_addons.includes("ambient_wled")) {
     electronics.push({
       name: "WS2812B 5V Addressable LED Strip (1.0m)",
       qty: 1,
-      category: "Lighting",
       notes: "Rear perimeter halo glow behind board",
       source: "AliExpress / Amazon"
     });
   }
 
-  // Host Compute
   if (!isLens) {
-    if (state.compute === "compute_mini_pc") {
+    if (userConfig.host_compute === "mini_pc") {
       electronics.push({
         name: "Refurbished Mini-PC (Intel N95/N100 or i5 Tiny)",
         qty: 1,
-        category: "Host PC",
         notes: "HP ProDesk, Dell Wyse, or Lenovo Tiny running Autodarts",
         source: "eBay / Amazon Refurbished"
       });
-    } else if (state.compute === "compute_raspberry_pi") {
+    } else if (userConfig.host_compute === "pi") {
       electronics.push({
         name: "Raspberry Pi 4 (4GB+) or Pi 5 + USB-C PSU",
         qty: 1,
-        category: "Host PC",
         notes: "Runs Autodarts Linux server",
         source: "Raspberry Pi Approved Reseller"
       });
-    } else if (state.compute === "compute_existing_pc") {
+    } else if (userConfig.host_compute === "existing_pc") {
       electronics.push({
         name: "Active USB 3.0 Repeater / Extension Cable (5m - 10m)",
         qty: 1,
-        category: "Cabling",
         notes: "Connects board cameras across the room to your desktop/laptop",
         source: "Amazon"
       });
     }
   }
 
-  // 4. REQUIRED TOOLS
+  // 4. Required Tools
   const tools = [
     { name: "Hex Key Set (Allen Wrenches)", notes: "For M4 and M2 cylindrical screws" },
     { name: "Pliers / Flush Side-Cutters", notes: "For resizing HBV camera boards from 38x38 to 32x32" }
@@ -550,22 +860,30 @@ function applyRulesAndCalculateBOM() {
     tools.push({ name: "Soldering Iron with M4/M6 Insert Tip", notes: "For melting brass heat inserts into plastic" });
   }
 
-  // Summaries
+  // Calculate Metrics
   const totalGrams = printedParts.reduce((acc, p) => acc + (p.estGrams * p.qty || 0), 0);
   const totalFasteners = hardware.reduce((acc, h) => acc + (h.qty || 0), 0);
   const totalPrintedPieces = printedParts.reduce((acc, p) => acc + (p.qty || 0), 0);
 
-  // Update Metrics in DOM
-  updateMetric("metric-wall-holes", wallHoles === 0 ? "0 (Stand)" : `${wallHoles} Holes`);
-  updateMetric("metric-print-weight", `~${totalGrams}g`);
-  updateMetric("metric-printed-pieces", `${totalPrintedPieces} Parts`);
-  updateMetric("metric-fastener-count", `${totalFasteners} Items`);
+  // Update Summary Subtitle
+  const summaryText = document.getElementById("config-summary-text");
+  if (summaryText) {
+    const visionLabel = isLens ? "Autodarts Lens (Smartphone)" : `3-Camera (${userConfig.cam_model.toUpperCase()})`;
+    const mountLabel = isStand ? "Stand Mounted" : hasBaseplate ? "Baseplate Wall Mounted" : "Direct Wall Mounted";
+    summaryText.textContent = `Configured for ${visionLabel} • ${mountLabel} • ${userConfig.assembly_style === "direct" ? "Direct Self-Tapping" : "Heat-Set Inserts"}.`;
+  }
 
-  // Render BOM Sections
-  renderBOMTables(printedParts, hardware, electronics, tools);
+  // Update Metric Cards
+  document.getElementById("metric-wall-holes").textContent = wallHoles === 0 ? "0 (Stand)" : `${wallHoles} Holes`;
+  document.getElementById("metric-printed-pieces").textContent = `${totalPrintedPieces} Files`;
+  document.getElementById("metric-print-weight").textContent = `~${totalGrams}g`;
+  document.getElementById("metric-fastener-count").textContent = `${totalFasteners} Items`;
 
-  // Store for export
-  window.lastCalculatedBOM = {
+  // Render Itemized Tables
+  renderFinishedTables(printedParts, hardware, electronics, tools);
+
+  // Save for exports
+  window.lastBOM = {
     printedParts,
     hardware,
     electronics,
@@ -577,230 +895,173 @@ function applyRulesAndCalculateBOM() {
   };
 }
 
-function updateMetric(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text;
-}
-
-// Render the itemized tables
-function renderBOMTables(printedParts, hardware, electronics, tools) {
-  const container = document.getElementById("bom-content-container");
+// Render Finished Tables
+function renderFinishedTables(printedParts, hardware, electronics, tools) {
+  const container = document.getElementById("bom-tables-container");
   if (!container) return;
 
   container.innerHTML = `
     <!-- 3D Printed Parts -->
-    <div class="bom-group" id="group-printed">
+    <div class="bom-card-group">
       <div class="bom-group-header">
-        <div class="group-title-wrap">
+        <div class="group-title-row">
           <span class="group-icon">🖨️</span>
           <h3 class="group-title">3D Printed Parts Checklist</h3>
         </div>
         <span class="group-count">${printedParts.length} files (${printedParts.reduce((a, b) => a + b.qty, 0)} total pieces)</span>
       </div>
-      <div class="bom-table-wrap">
-        <table class="bom-table">
-          <thead>
+      <table class="bom-table">
+        <thead>
+          <tr>
+            <th>Component Name</th>
+            <th>Qty</th>
+            <th>Material</th>
+            <th>Makerworld Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${printedParts
+            .map(
+              (p) => `
             <tr>
-              <th>Part Name</th>
-              <th>Qty</th>
-              <th>Material</th>
-              <th>Source / Download</th>
+              <td>
+                <div class="part-name-cell">
+                  <span class="part-name-bold">${p.name}</span>
+                  <span class="part-notes-dim">${p.notes}</span>
+                </div>
+              </td>
+              <td><span class="qty-pill">${p.qty}x</span></td>
+              <td><span class="mat-tag ${p.material.includes("TPU") ? "mat-tpu" : "mat-pla"}">${p.material}</span></td>
+              <td>
+                <a href="${p.modelUrl}" target="_blank" rel="noopener noreferrer" class="link-external">
+                  Makerworld #${p.modelId} ↗
+                </a>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            ${printedParts
-              .map(
-                (p) => `
-              <tr>
-                <td>
-                  <div class="part-cell">
-                    <span class="part-name">${p.name}</span>
-                    <span class="part-notes">${p.notes}</span>
-                  </div>
-                </td>
-                <td class="qty-cell"><strong>${p.qty}x</strong></td>
-                <td><span class="material-badge ${p.material.includes("TPU") ? "mat-tpu" : "mat-pla"}">${p.material}</span></td>
-                <td>
-                  <a href="${p.modelUrl}" target="_blank" rel="noopener noreferrer" class="link-download">
-                    <span>Makerworld</span>
-                    <span class="model-id">#${p.modelId}</span> ↗
-                  </a>
-                </td>
-              </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-      </div>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
     </div>
 
     <!-- Hardware & Fasteners -->
-    <div class="bom-group" id="group-hardware">
+    <div class="bom-card-group">
       <div class="bom-group-header">
-        <div class="group-title-wrap">
+        <div class="group-title-row">
           <span class="group-icon">🔩</span>
           <h3 class="group-title">Hardware & Fasteners</h3>
         </div>
         <span class="group-count">${hardware.reduce((a, b) => a + b.qty, 0)} items</span>
       </div>
-      <div class="bom-table-wrap">
-        <table class="bom-table">
-          <thead>
+      <table class="bom-table">
+        <thead>
+          <tr>
+            <th>Item & Specification</th>
+            <th>Qty</th>
+            <th>Purpose / Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${hardware
+            .map(
+              (h) => `
             <tr>
-              <th>Item & Specification</th>
-              <th>Qty</th>
-              <th>Type</th>
-              <th>Purpose & Notes</th>
+              <td><span class="part-name-bold">${h.name}</span></td>
+              <td><span class="qty-pill">${h.qty}x</span></td>
+              <td class="part-notes-dim">${h.notes}</td>
             </tr>
-          </thead>
-          <tbody>
-            ${hardware
-              .map(
-                (h) => `
-              <tr>
-                <td>
-                  <div class="part-cell">
-                    <span class="part-name">${h.name}</span>
-                  </div>
-                </td>
-                <td class="qty-cell"><strong>${h.qty}x</strong></td>
-                <td><span class="type-pill">${h.type}</span></td>
-                <td class="notes-cell">${h.notes}</td>
-              </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-      </div>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
     </div>
 
     <!-- Electronics & Vision -->
-    <div class="bom-group" id="group-electronics">
+    <div class="bom-card-group">
       <div class="bom-group-header">
-        <div class="group-title-wrap">
+        <div class="group-title-row">
           <span class="group-icon">⚡</span>
-          <h3 class="group-title">Electronics, Cameras & Host</h3>
+          <h3 class="group-title">Electronics, Vision & Host</h3>
         </div>
         <span class="group-count">${electronics.length} items</span>
       </div>
-      <div class="bom-table-wrap">
-        <table class="bom-table">
-          <thead>
+      <table class="bom-table">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Qty</th>
+            <th>Source & Guidance</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${electronics
+            .map(
+              (e) => `
             <tr>
-              <th>Component</th>
-              <th>Qty</th>
-              <th>Category</th>
-              <th>Source / Guidance</th>
+              <td>
+                <div class="part-name-cell">
+                  <span class="part-name-bold">${e.name}</span>
+                  <span class="part-notes-dim">${e.notes}</span>
+                </div>
+              </td>
+              <td><span class="qty-pill">${e.qty}x</span></td>
+              <td class="part-notes-dim">${e.source}</td>
             </tr>
-          </thead>
-          <tbody>
-            ${electronics
-              .map(
-                (e) => `
-              <tr>
-                <td>
-                  <div class="part-cell">
-                    <span class="part-name">${e.name}</span>
-                    <span class="part-notes">${e.notes}</span>
-                  </div>
-                </td>
-                <td class="qty-cell"><strong>${e.qty}x</strong></td>
-                <td><span class="type-pill">${e.category}</span></td>
-                <td class="notes-cell">${e.source}</td>
-              </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-      </div>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
     </div>
 
-    <!-- Required Tools -->
-    <div class="bom-group" id="group-tools">
+    <!-- Tools Required -->
+    <div class="bom-card-group">
       <div class="bom-group-header">
-        <div class="group-title-wrap">
+        <div class="group-title-row">
           <span class="group-icon">🛠️</span>
           <h3 class="group-title">Assembly Tools Required</h3>
         </div>
       </div>
-      <div class="bom-table-wrap">
-        <table class="bom-table">
-          <tbody>
-            ${tools
-              .map(
-                (t) => `
-              <tr>
-                <td><strong class="part-name">${t.name}</strong></td>
-                <td class="notes-cell">${t.notes}</td>
-              </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-      </div>
+      <table class="bom-table">
+        <tbody>
+          ${tools
+            .map(
+              (t) => `
+            <tr>
+              <td style="width: 35%;"><span class="part-name-bold">${t.name}</span></td>
+              <td class="part-notes-dim">${t.notes}</td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
     </div>
   `;
 }
 
-// Global Event Handlers for Export & Modals
-function bindGlobalEvents() {
-  // Copy BOM
-  const copyBtn = document.getElementById("btn-copy-bom");
-  if (copyBtn) {
-    copyBtn.addEventListener("click", () => copyBOMToClipboard());
-  }
-
-  // Download CSV
-  const csvBtn = document.getElementById("btn-export-csv");
-  if (csvBtn) {
-    csvBtn.addEventListener("click", () => exportBOMToCSV());
-  }
-
-  // Print BOM
-  const printBtn = document.getElementById("btn-print-bom");
-  if (printBtn) {
-    printBtn.addEventListener("click", () => window.print());
-  }
-
-  // Topology Modal
-  const topoBtn = document.getElementById("btn-open-topology");
-  const modal = document.getElementById("topology-modal");
-  const closeBtn = document.getElementById("btn-close-modal");
-  if (topoBtn && modal) {
-    topoBtn.addEventListener("click", () => modal.classList.add("open"));
-  }
-  if (closeBtn && modal) {
-    closeBtn.addEventListener("click", () => modal.classList.remove("open"));
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal.classList.remove("open");
-    });
-  }
-}
-
 // Copy Markdown formatted BOM
 function copyBOMToClipboard() {
-  const data = window.lastCalculatedBOM;
+  const data = window.lastBOM;
   if (!data) return;
 
-  let text = `# IT2 Autodarts System - Customized Bill of Materials\n`;
-  text += `Generated via IT2 BOM Configurator (IteraThor)\n\n`;
-  text += `### Setup Summary\n`;
-  text += `- Wall Holes to Drill: ${data.wallHoles}\n`;
+  let text = `# IT2 Autodarts Custom Bill of Materials\n`;
+  text += `Generated via IT2 Configurator\n\n`;
+  text += `### Summary\n`;
+  text += `- Wall Holes: ${data.wallHoles}\n`;
   text += `- Total 3D Printed Parts: ${data.totalPrintedPieces} (~${data.totalGrams}g filament)\n`;
-  text += `- Total Fasteners & Screws: ${data.totalFasteners}\n\n`;
+  text += `- Total Fasteners: ${data.totalFasteners} items\n\n`;
 
   text += `### 🖨️ 3D Printed Parts\n`;
   data.printedParts.forEach((p) => {
-    text += `- [ ] **${p.qty}x ${p.name}** | Material: ${p.material} | ${p.notes} (Makerworld #${p.modelId})\n`;
+    text += `- [ ] **${p.qty}x ${p.name}** (${p.material}) - ${p.notes} [Makerworld #${p.modelId}]\n`;
   });
 
   text += `\n### 🔩 Hardware & Fasteners\n`;
   data.hardware.forEach((h) => {
-    text += `- [ ] **${h.qty}x ${h.name}** (${h.type}) - ${h.notes}\n`;
+    text += `- [ ] **${h.qty}x ${h.name}** - ${h.notes}\n`;
   });
 
   text += `\n### ⚡ Electronics & Vision\n`;
@@ -813,17 +1074,17 @@ function copyBOMToClipboard() {
     text += `- ${t.name}: ${t.notes}\n`;
   });
 
-  text += `\nOfficial Downloads:\n- System: ${IT2_CATALOG.system.makerworld_system_url}\n- Baseplate: ${IT2_CATALOG.system.makerworld_baseplate_url}\n- Documentation: ${IT2_CATALOG.system.github_url}\n`;
-
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById("btn-copy-bom");
     if (btn) {
-      const original = btn.innerHTML;
-      btn.innerHTML = `✓ Copied to Clipboard!`;
-      btn.classList.add("btn-success");
+      const orig = btn.textContent;
+      btn.textContent = "✓ Copied to Clipboard!";
+      btn.style.background = "var(--accent-emerald)";
+      btn.style.color = "#000";
       setTimeout(() => {
-        btn.innerHTML = original;
-        btn.classList.remove("btn-success");
+        btn.textContent = orig;
+        btn.style.background = "";
+        btn.style.color = "";
       }, 2000);
     }
   });
@@ -831,19 +1092,19 @@ function copyBOMToClipboard() {
 
 // Export CSV
 function exportBOMToCSV() {
-  const data = window.lastCalculatedBOM;
+  const data = window.lastBOM;
   if (!data) return;
 
-  let csv = "Category,Part Name,Quantity,Specification / Material,Purpose / Notes,Source / Link\n";
+  let csv = "Category,Part Name,Quantity,Specification / Material,Purpose / Notes,Source\n";
 
   data.printedParts.forEach((p) => {
     csv += `"3D Print","${p.name}",${p.qty},"${p.material}","${p.notes}","Makerworld #${p.modelId}"\n`;
   });
   data.hardware.forEach((h) => {
-    csv += `"Hardware","${h.name}",${h.qty},"${h.type}","${h.notes}","DIN 912 / ISO 4762"\n`;
+    csv += `"Hardware","${h.name}",${h.qty},"Fastener","${h.notes}","DIN 912 / ISO 4762"\n`;
   });
   data.electronics.forEach((e) => {
-    csv += `"Electronics","${e.name}",${e.qty},"${e.category}","${e.notes}","${e.source}"\n`;
+    csv += `"Electronics","${e.name}",${e.qty},"Electronics","${e.notes}","${e.source}"\n`;
   });
   data.tools.forEach((t) => {
     csv += `"Tools","${t.name}",1,"Tool","${t.notes}","Workshop"\n`;
@@ -853,7 +1114,7 @@ function exportBOMToCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `IT2-BOM-Configuration-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `IT2-Custom-BOM-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
