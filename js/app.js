@@ -25,6 +25,12 @@ function formatCurrency(eurAmount) {
   return `${curr.symbol}${converted}`;
 }
 
+if (!window.itemStates) window.itemStates = {};
+
+function getItemKey(type, name) {
+  return `${type}_${name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}`;
+}
+
 const userConfig = {
   vision_mode: null,
   cam_model: "ov9732",
@@ -923,13 +929,6 @@ function generateCustomBOM() {
     if (!isDirectTapping) {
       tools.push({ name: "Soldering Iron with Insert Tip", notes: "M4/M6 heat inserts" });
     }
-  }
-
-  // Initialize state map for items if not already set
-  if (!window.itemStates) window.itemStates = {};
-
-  function getItemKey(type, name) {
-    return `${type}_${name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}`;
   }
 
   // Calculate dynamic costs considering user's owned status
