@@ -1047,8 +1047,8 @@ function copyBOMToClipboard() {
   const data = window.lastBOM;
   if (!data) return;
 
-  let text = `# IT2 Autodarts Custom Bill of Materials\n`;
-  text += `Generated via IT2 Configurator\n\n`;
+  let text = `# IT2-ADvisor - Custom Bill of Materials\n`;
+  text += `Generated via IT2-ADvisor by IteraThor\n\n`;
   text += `### Summary\n`;
   text += `- Wall Holes: ${data.wallHoles}\n`;
   text += `- Total 3D Printed Parts: ${data.totalPrintedPieces} (~${data.totalGrams}g filament)\n`;

@@ -4,7 +4,7 @@
  */
 const IT2_CATALOG = {
   system: {
-    name: "IT2 Autodarts System",
+    name: "IT2-ADvisor",
     author: "IteraThor",
     makerworld_system_url: "https://makerworld.com/en/models/1334165",
     makerworld_baseplate_url: "https://makerworld.com/en/models/2782096",
