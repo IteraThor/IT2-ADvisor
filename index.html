@@ -3,21 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IT2-ADvisor | Autodarts Build Configurator</title>
-  <meta name="description" content="Minimalist step-by-step build advisor and BOM configurator for the IT2 Autodarts scoring system by IteraThor.">
+  <title>IT2-ADvisor</title>
   <meta name="theme-color" content="#0a0d14">
-
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Minimal Top Navigation -->
   <header class="top-nav">
     <div class="nav-brand">
       <span class="nav-logo">🎯</span>
@@ -31,13 +25,9 @@
     </div>
   </header>
 
-  <!-- Main Centered Container -->
   <main class="zen-container">
 
-    <!-- QUESTIONNAIRE SCREEN (Active by default) -->
     <div id="screen-questionnaire" class="screen-view active">
-      
-      <!-- Progress Bar & Step Tracker -->
       <div class="progress-wrap">
         <div class="progress-meta">
           <button type="button" id="btn-back" class="btn-text-nav" style="visibility: hidden;">
@@ -50,70 +40,57 @@
         </div>
       </div>
 
-      <!-- The Active Centered Question Card -->
       <div class="card-stage">
-        <div id="question-card" class="question-card">
-          <!-- Dynamically populated by app.js -->
-        </div>
+        <div id="question-card" class="question-card"></div>
       </div>
-
     </div>
 
-    <!-- FINISHED BOM SCREEN (Revealed at end of chain) -->
     <div id="screen-bom" class="screen-view" style="display: none;">
-      
       <div class="bom-reveal-header">
         <div class="badge-ready">✓ Configuration Complete</div>
         <h1 class="reveal-title">Your Custom IT2 Build</h1>
-        <p class="reveal-subtitle" id="config-summary-text">Tailored Bill of Materials based on your setup requirements.</p>
+        <p class="reveal-subtitle" id="config-summary-text"></p>
         
         <div class="reveal-actions">
           <button type="button" class="btn-pill btn-pill-primary" id="btn-copy-bom">
-            📋 Copy BOM to Clipboard
+            📋 Copy BOM
           </button>
           <button type="button" class="btn-pill btn-pill-secondary" id="btn-export-csv">
             📥 Download CSV
           </button>
           <button type="button" class="btn-pill btn-pill-secondary" id="btn-print-bom">
-            🖨️ Print Checklist
+            🖨️ Print
           </button>
           <button type="button" class="btn-pill btn-pill-outline" id="btn-restart">
-            ↺ Start Over
+            ↺ Restart
           </button>
         </div>
       </div>
 
-      <!-- Quick Metrics Strip -->
       <div class="metrics-strip">
         <div class="metric-card">
-          <span class="metric-num" id="metric-wall-holes">3 Holes</span>
-          <span class="metric-label">Wall Drilling Impact</span>
+          <span class="metric-num" id="metric-wall-holes">3</span>
+          <span class="metric-label">Wall Holes</span>
         </div>
         <div class="metric-card">
-          <span class="metric-num" id="metric-printed-pieces">9 Files</span>
-          <span class="metric-label">3D Printed Parts</span>
+          <span class="metric-num" id="metric-printed-pieces">9</span>
+          <span class="metric-label">3D Printed Files</span>
         </div>
         <div class="metric-card">
           <span class="metric-num" id="metric-print-weight">~780g</span>
           <span class="metric-label">Est. Filament</span>
         </div>
         <div class="metric-card">
-          <span class="metric-num" id="metric-fastener-count">26 Items</span>
-          <span class="metric-label">Hardware & Fasteners</span>
+          <span class="metric-num" id="metric-fastener-count">26</span>
+          <span class="metric-label">Fasteners</span>
         </div>
       </div>
 
-      <!-- Itemized BOM Tables -->
-      <div class="bom-tables-container" id="bom-tables-container">
-        <!-- Rendered by app.js -->
-      </div>
-
+      <div class="bom-tables-container" id="bom-tables-container"></div>
     </div>
 
   </main>
 
-  <!-- Scripts -->
-  <script src="js/catalog.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

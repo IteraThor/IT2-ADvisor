@@ -1,38 +1,26 @@
-/**
- * IT2 System Minimalist Card Questionnaire & BOM Engine
- * Features dynamic branching questions, clean progressive transitions, and customized BOM output.
- */
-
-// User Configuration State
 const userConfig = {
-  vision_mode: null, // "lens" | "3cam"
-  cam_model: "ov9732", // "ov9732" | "ov2710"
-  mount_type: null, // "wall" | "stand"
-  use_baseplate: null, // true | false
-  baseplate_addons: [], // ["tpu_dampeners", "hardware_bay", "ambient_wled"]
-  ring_type: null, // "plasma" | "corona" | "diy_std" | "diy_low"
-  lighting_mode: "white", // "white" | "wled"
-  host_compute: "existing_pc", // "existing_pc" | "mini_pc" | "pi"
-  assembly_style: null // "direct" | "inserts"
+  vision_mode: null,
+  cam_model: "ov9732",
+  mount_type: null,
+  use_baseplate: null,
+  baseplate_addons: [],
+  ring_type: null,
+  lighting_mode: "white",
+  host_compute: "existing_pc",
+  assembly_style: null
 };
 
-// Navigation History Stack
 let questionHistory = [];
 let currentQuestionId = "q_vision";
 
-// Define the Branching Questions
 const QUESTIONS = {
   q_vision: {
-    category: "Vision Architecture",
     title: "How do you want to track your darts?",
-    subtitle: "Autodarts scoring setup with tournament-grade camera tracking.",
     options: [
       {
         id: "opt_3cam",
         letter: "A",
         title: "Classic 3-Camera Rig",
-        badge: "Active Standard",
-        badgeType: "accent",
         action: () => {
           userConfig.vision_mode = "3cam";
           return "q_cam_model";
@@ -41,7 +29,7 @@ const QUESTIONS = {
       {
         id: "opt_lens",
         letter: "B",
-        title: "Autodarts Lens (Single Smartphone)",
+        title: "Autodarts Lens",
         badge: "Coming Soon",
         badgeType: "neutral",
         disabled: true,
@@ -50,50 +38,13 @@ const QUESTIONS = {
     ]
   },
 
-  q_lens_mount: {
-    category: "Phone Placement",
-    title: "How do you want to hold your smartphone?",
-    subtitle: "Autodarts Lens only needs a stable, angled view of your dartboard.",
-    options: [
-      {
-        id: "opt_lens_holder",
-        letter: "A",
-        title: "Phone Holder (Ring or Surround Clip)",
-        desc: "Compact 3D-printed bracket that clips onto your existing light ring or dartboard surround at the calibrated angle.",
-        badge: "Clips to Board / Ring",
-        badgeType: "success",
-        action: () => {
-          userConfig.lens_mount_type = "holder";
-          return "FINISHED";
-        }
-      },
-      {
-        id: "opt_lens_tripod",
-        letter: "B",
-        title: "Phone Holder Tripod / Stand Mount",
-        desc: "Freestanding mobile tripod or stand mount pointing up at the dartboard. Zero modifications to your wall or board.",
-        badge: "Freestanding Tripod",
-        badgeType: "accent",
-        action: () => {
-          userConfig.lens_mount_type = "tripod";
-          return "FINISHED";
-        }
-      }
-    ]
-  },
-
   q_cam_model: {
-    category: "Camera Sensors",
     title: "Which camera modules do you prefer?",
-    subtitle: "We exclusively recommend genuine HBV camera modules from AliExpress.",
     options: [
       {
         id: "opt_ov9732",
         letter: "A",
-        title: "HBV OV9732 (Recommended Budget)",
-        desc: "720p high-speed sensors. Extremely reliable dart detection with low CPU overhead.",
-        badge: "Best Value",
-        badgeType: "success",
+        title: "HBV OV9732",
         action: () => {
           userConfig.cam_model = "ov9732";
           return "q_mounting";
@@ -102,10 +53,7 @@ const QUESTIONS = {
       {
         id: "opt_ov2710",
         letter: "B",
-        title: "HBV OV2710 (Premium 1080p)",
-        desc: "1080p crisp board view. Higher resolution visual feed for sharper monitoring.",
-        badge: "Crisp 1080p",
-        badgeType: "accent",
+        title: "HBV OV2710",
         action: () => {
           userConfig.cam_model = "ov2710";
           return "q_mounting";
@@ -115,17 +63,12 @@ const QUESTIONS = {
   },
 
   q_mounting: {
-    category: "Mounting Environment",
     title: "Where will your dartboard be set up?",
-    subtitle: "This dictates the mounting brackets and structural anchor required.",
     options: [
       {
         id: "opt_wall",
         letter: "A",
-        title: "On a Wall (Drywall, Brick, or Backboard)",
-        desc: "Permanent wall setup. You can choose direct wall mounting or the IT2 4-part Baseplate.",
-        badge: "Permanent Setup",
-        badgeType: "neutral",
+        title: "Wall",
         action: () => {
           userConfig.mount_type = "wall";
           return "q_wall_baseplate";
@@ -134,31 +77,23 @@ const QUESTIONS = {
       {
         id: "opt_stand",
         letter: "B",
-        title: "On a Portable Dart Stand (Tripod)",
-        desc: "Mobile setups (e.g. Winmau Xtreme 2). Natively requires the IT2 Baseplate for rigidity.",
-        badge: "Stand Native • 0 Wall Holes",
-        badgeType: "accent",
+        title: "Dart Stand",
         action: () => {
           userConfig.mount_type = "stand";
           userConfig.use_baseplate = true;
-          return "q_baseplate_addons"; // auto-selects baseplate!
+          return "q_baseplate_addons";
         }
       }
     ]
   },
 
   q_wall_baseplate: {
-    category: "Wall Mounting Strategy",
-    title: "Do you want to use the IT2 4-part Baseplate?",
-    subtitle: "The Baseplate acts as a rigid master anchor between the wall, dartboard, and IT2 system.",
+    title: "Do you want to use the IT2 Baseplate?",
     options: [
       {
         id: "opt_baseplate_yes",
         letter: "A",
-        title: "Yes, use the Baseplate (Highly Recommended)",
-        desc: "Drastically protects walls (only 3 holes drilled instead of 8), hides all wiring, and unlocks sound dampening.",
-        badge: "Only 3 Holes • Clean Cables",
-        badgeType: "success",
+        title: "Baseplate",
         action: () => {
           userConfig.use_baseplate = true;
           return "q_baseplate_addons";
@@ -167,10 +102,7 @@ const QUESTIONS = {
       {
         id: "opt_baseplate_no",
         letter: "B",
-        title: "No, Direct Wall Mount (Minimalist)",
-        desc: "Mounts arms and board directly to the wall. Slightly fewer 3D printed parts, but requires drilling ~8 holes.",
-        badge: "8 Wall Holes Needed",
-        badgeType: "warning",
+        title: "Direct Wall Mount",
         action: () => {
           userConfig.use_baseplate = false;
           userConfig.baseplate_addons = [];
@@ -181,31 +113,20 @@ const QUESTIONS = {
   },
 
   q_baseplate_addons: {
-    category: "Baseplate Upgrades",
     title: "Which Baseplate add-ons would you like?",
-    subtitle: "Select all that you want to include, or choose None.",
     isMultiSelect: true,
     options: [
       {
         id: "tpu_dampeners",
-        title: "TPU 95A Sound & Vibration Dampeners",
-        desc: "Flexible shock-absorbing inserts in the baseplate to mute dart impact noise into walls.",
-        badge: "Acoustic Silence",
-        badgeType: "success"
+        title: "Sound Dampeners"
       },
       {
         id: "hardware_bay",
-        title: "Hidden Rear Hardware Bay",
-        desc: "Integrated bracket behind the board to conceal a Mini-PC, Raspberry Pi, or WLED controller.",
-        badge: "Concealed Hardware",
-        badgeType: "accent"
+        title: "Hardware Bay"
       },
       {
         id: "ambient_wled",
-        title: "Perimeter Ambient Wall Halo Glow",
-        desc: "Perimeter channel for addressable LED strip creating a soft halo glow on the wall.",
-        badge: "Ambient Halo",
-        badgeType: "accent"
+        title: "Ambient Wall Glow"
       }
     ],
     onContinue: (selectedIds) => {
@@ -215,41 +136,30 @@ const QUESTIONS = {
   },
 
   q_ring: {
-    category: "Light Ring & Frame",
     title: "Which light ring frame will you use?",
-    subtitle: "The IT2 system geometry is matched 1:1 to the Winmau Plasma pattern.",
     options: [
       {
         id: "opt_ring_plasma",
         letter: "A",
-        title: "Winmau Plasma Light Ring (Commercial)",
-        desc: "Native direct fit! Camera arms bolt directly to the Plasma frame. Needs 0 adapters.",
-        badge: "Native Direct Fit",
-        badgeType: "success",
+        title: "Winmau Plasma",
         action: () => {
           userConfig.ring_type = "plasma";
-          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+          return "q_compute";
         }
       },
       {
         id: "opt_ring_corona",
         letter: "B",
-        title: "Target Corona Light Ring (Commercial)",
-        desc: "Converts the Target Corona magnetic ring to IT2 using 3x 3D-printed conversion brackets.",
-        badge: "Includes 3x Adapters",
-        badgeType: "neutral",
+        title: "Target Corona",
         action: () => {
           userConfig.ring_type = "corona";
-          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+          return "q_compute";
         }
       },
       {
         id: "opt_ring_diy_std",
         letter: "C",
-        title: "IT2 DIY 3D-Printed Ring (Standard Ceiling ≥ 2.0m)",
-        desc: "Full 360° circular slim light ring with snap-on curved diffusers. Slimmest 3D design available.",
-        badge: "Full 360° Circle",
-        badgeType: "accent",
+        title: "IT2 DIY Ring",
         action: () => {
           userConfig.ring_type = "diy_std";
           return "q_lighting_mode";
@@ -258,10 +168,7 @@ const QUESTIONS = {
       {
         id: "opt_ring_diy_low",
         letter: "D",
-        title: "IT2 DIY Flat-Top Ring (Low Ceiling ≤ 2.0m)",
-        desc: "Flattened top arch profile engineered specifically for low basements and attic rooms under 2 meters high.",
-        badge: "Fits Low Ceilings ≤ 2.0m",
-        badgeType: "warning",
+        title: "IT2 DIY Flat-Top Ring",
         action: () => {
           userConfig.ring_type = "diy_low";
           return "q_lighting_mode";
@@ -271,49 +178,36 @@ const QUESTIONS = {
   },
 
   q_lighting_mode: {
-    category: "Ring Illumination",
-    title: "What kind of lighting do you want inside the DIY Ring?",
-    subtitle: "You can choose clean standard white or reactive gameplay animations.",
+    title: "What lighting do you want inside the ring?",
     options: [
       {
         id: "opt_light_white",
         letter: "A",
-        title: "Clean Functional White Illumination",
-        desc: "Flicker-free white LED strip (COB or SMD) with diffusers for shadow-free dart tracking.",
-        badge: "Standard",
-        badgeType: "neutral",
+        title: "White",
         action: () => {
           userConfig.lighting_mode = "white";
-          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+          return "q_compute";
         }
       },
       {
         id: "opt_light_wled",
         letter: "B",
-        title: "Dual-Channel Reactive WLED Lighting",
-        desc: "Clean board light + addressable RGB LEDs running WLED. Flashes and animates to 180s, checkouts & hits.",
-        badge: "Arcade Reactive",
-        badgeType: "accent",
+        title: "WLED",
         action: () => {
           userConfig.lighting_mode = "wled";
-          return userConfig.vision_mode === "3cam" ? "q_compute" : "q_assembly";
+          return "q_compute";
         }
       }
     ]
   },
 
   q_compute: {
-    category: "Host Hardware",
-    title: "How will you run the Autodarts software?",
-    subtitle: "The 3 USB camera feeds need to be processed by a computer.",
+    title: "How will you run Autodarts?",
     options: [
       {
         id: "opt_compute_existing",
         letter: "A",
-        title: "Use My Existing Desktop PC or Laptop",
-        desc: "Connects across the room using an active USB extension or powered hub. €0 added computer cost.",
-        badge: "€0 Added Cost",
-        badgeType: "success",
+        title: "PC / Laptop",
         action: () => {
           userConfig.host_compute = "existing_pc";
           return "q_assembly";
@@ -322,10 +216,7 @@ const QUESTIONS = {
       {
         id: "opt_compute_mini_pc",
         letter: "B",
-        title: "Dedicated Refurbished Mini-PC",
-        desc: "Compact Intel N95/N100 or refurbished HP ProDesk / Dell Tiny. Silent, dedicated, snaps into hardware bay.",
-        badge: "Community Favorite",
-        badgeType: "accent",
+        title: "Mini-PC",
         action: () => {
           userConfig.host_compute = "mini_pc";
           return "q_assembly";
@@ -334,10 +225,7 @@ const QUESTIONS = {
       {
         id: "opt_compute_pi",
         letter: "C",
-        title: "Raspberry Pi 4 / 5",
-        desc: "Single-board computer running Linux Autodarts. Compact and energy efficient.",
-        badge: "Compact SBC",
-        badgeType: "neutral",
+        title: "Raspberry Pi",
         action: () => {
           userConfig.host_compute = "pi";
           return "q_assembly";
@@ -347,17 +235,12 @@ const QUESTIONS = {
   },
 
   q_assembly: {
-    category: "Fasteners & Assembly",
     title: "How do you want to fasten your 3D printed parts?",
-    subtitle: "IT2 supports both heat-set brass threaded inserts and direct self-tapping screws.",
     options: [
       {
         id: "opt_fastener_direct",
         letter: "A",
-        title: "Direct Self-Tapping (No Inserts)",
-        desc: "Taps M4 cylindrical screws directly into plastic pilot holes. Zero brass inserts and zero soldering iron needed!",
-        badge: "Beginner Friendly • €0 Inserts",
-        badgeType: "success",
+        title: "Direct Self-Tapping",
         action: () => {
           userConfig.assembly_style = "direct";
           return "FINISHED";
@@ -366,10 +249,7 @@ const QUESTIONS = {
       {
         id: "opt_fastener_inserts",
         letter: "B",
-        title: "Brass Heat-Set Threaded Inserts (M4 / M6)",
-        desc: "Melted into 3D prints using a soldering iron. Rock-solid and can be assembled and disassembled endlessly.",
-        badge: "Heavy Duty & Reusable",
-        badgeType: "accent",
+        title: "Heat-Set Inserts",
         action: () => {
           userConfig.assembly_style = "inserts";
           return "FINISHED";
@@ -379,13 +259,11 @@ const QUESTIONS = {
   }
 };
 
-// Initialize App
 document.addEventListener("DOMContentLoaded", () => {
   showQuestion(currentQuestionId);
   bindNavigationEvents();
 });
 
-// Render the active question card
 function showQuestion(qId) {
   const q = QUESTIONS[qId];
   if (!q) return;
@@ -394,8 +272,7 @@ function showQuestion(qId) {
   const container = document.getElementById("question-card");
   if (!container) return;
 
-  // Update Progress Meta
-  const totalQuestionsEstimate = (userConfig.vision_mode === "lens" || qId === "q_lens_mount") ? 2 : 7;
+  const totalQuestionsEstimate = 7;
   const currentStepNum = questionHistory.length + 1;
   const progressPercent = Math.min(100, Math.round((currentStepNum / totalQuestionsEstimate) * 100));
 
@@ -410,7 +287,6 @@ function showQuestion(qId) {
     backBtn.style.visibility = questionHistory.length > 0 ? "visible" : "hidden";
   }
 
-  // Handle Multi-Select vs Single-Select Card
   if (q.isMultiSelect) {
     renderMultiSelectQuestion(container, q);
   } else {
@@ -418,12 +294,9 @@ function showQuestion(qId) {
   }
 }
 
-// Render Single-Select Question
 function renderSingleSelectQuestion(container, q) {
   container.innerHTML = `
-    <span class="q-category-tag">${q.category}</span>
     <h2 class="q-title">${q.title}</h2>
-    <p class="q-subtitle">${q.subtitle}</p>
 
     <div class="options-list">
       ${q.options
@@ -440,7 +313,6 @@ function renderSingleSelectQuestion(container, q) {
               <span class="option-title">${opt.title}</span>
               ${opt.badge ? `<span class="option-badge badge-${opt.badgeType || "neutral"}">${opt.badge}</span>` : ""}
             </div>
-            ${opt.desc ? `<p class="option-desc">${opt.desc}</p>` : ""}
           </div>
         </button>
       `
@@ -470,14 +342,11 @@ function renderSingleSelectQuestion(container, q) {
   });
 }
 
-// Render Multi-Select Question
 function renderMultiSelectQuestion(container, q) {
   let selected = [...userConfig.baseplate_addons];
 
   container.innerHTML = `
-    <span class="q-category-tag">${q.category}</span>
     <h2 class="q-title">${q.title}</h2>
-    <p class="q-subtitle">${q.subtitle}</p>
 
     <div class="options-list" id="multi-options-list">
       ${q.options
@@ -489,9 +358,7 @@ function renderMultiSelectQuestion(container, q) {
             <div class="option-text-wrap">
               <div class="option-title-row">
                 <span class="option-title">${opt.title}</span>
-                ${opt.badge ? `<span class="option-badge badge-${opt.badgeType || "neutral"}">${opt.badge}</span>` : ""}
               </div>
-              <p class="option-desc">${opt.desc}</p>
             </div>
           </button>
         `;
@@ -506,7 +373,6 @@ function renderMultiSelectQuestion(container, q) {
     </div>
   `;
 
-  // Toggle selections
   container.querySelectorAll(".option-item").forEach((btn) => {
     btn.addEventListener("click", () => {
       const optId = btn.getAttribute("data-opt");
@@ -522,7 +388,6 @@ function renderMultiSelectQuestion(container, q) {
     });
   });
 
-  // Continue button
   const continueBtn = document.getElementById("btn-multi-continue");
   if (continueBtn) {
     continueBtn.addEventListener("click", () => {
@@ -537,7 +402,6 @@ function renderMultiSelectQuestion(container, q) {
   }
 }
 
-// Bind Navigation
 function bindNavigationEvents() {
   const backBtn = document.getElementById("btn-back");
   if (backBtn) {
@@ -559,7 +423,6 @@ function bindNavigationEvents() {
     });
   }
 
-  // Export buttons
   const copyBtn = document.getElementById("btn-copy-bom");
   if (copyBtn) copyBtn.addEventListener("click", () => copyBOMToClipboard());
 
@@ -570,7 +433,6 @@ function bindNavigationEvents() {
   if (printBtn) printBtn.addEventListener("click", () => window.print());
 }
 
-// Finish Questionnaire and Reveal BOM
 function finishQuestionnaire() {
   document.getElementById("screen-questionnaire").style.display = "none";
   const bomScreen = document.getElementById("screen-bom");
@@ -580,7 +442,6 @@ function finishQuestionnaire() {
   generateCustomBOM();
 }
 
-// Calculate the Custom BOM based on answers
 function generateCustomBOM() {
   const isLens = userConfig.vision_mode === "lens";
   const isStand = userConfig.mount_type === "stand";
@@ -588,21 +449,19 @@ function generateCustomBOM() {
   const isDirectWall = userConfig.mount_type === "wall" && !hasBaseplate;
   const isDirectTapping = userConfig.assembly_style === "direct";
 
-  // Wall Drilling Impact
   let wallHoles = 0;
   if (isDirectWall) wallHoles = 8;
   else if (hasBaseplate && !isStand) wallHoles = 3;
   else if (isStand) wallHoles = 0;
 
-  // 1. 3D Printed Parts
   const printedParts = [];
 
   if (hasBaseplate) {
     printedParts.push({
-      name: "IT2 4-Segment Interlocking Baseplate",
+      name: "IT2 Baseplate Set",
       qty: 1,
       material: "PLA / PETG",
-      notes: "Heavy-duty backboard frame for dartboard & IT2 arms",
+      notes: "4-segment backboard",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
       estGrams: 480
@@ -611,10 +470,10 @@ function generateCustomBOM() {
 
   if (hasBaseplate && userConfig.baseplate_addons.includes("tpu_dampeners")) {
     printedParts.push({
-      name: "Circular Sound Dampener Inserts",
+      name: "Sound Dampener Inserts",
       qty: 3,
-      material: "TPU 95A (Flexible)",
-      notes: "Absorbs dart impact thud from traveling into wall",
+      material: "TPU 95A",
+      notes: "Vibration isolation",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
       estGrams: 45
@@ -623,10 +482,10 @@ function generateCustomBOM() {
 
   if (hasBaseplate && userConfig.baseplate_addons.includes("hardware_bay")) {
     printedParts.push({
-      name: "Rear Hidden Hardware Bay Bracket",
+      name: "Rear Hardware Bay Mount",
       qty: 1,
       material: "PLA / PETG",
-      notes: "Conceals Mini-PC, Pi, or WLED controller behind board",
+      notes: "Host bracket",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
       estGrams: 75
@@ -635,16 +494,11 @@ function generateCustomBOM() {
 
   if (isLens) {
     const isTripod = userConfig.lens_mount_type === "tripod";
-    const partName = isTripod ? "IT2 Phone Holder Tripod / Stand Mount" : "IT2 Ring / Surround Phone Holder";
-    const partNotes = isTripod
-      ? "Mounts smartphone securely onto standard 1/4\" camera tripod or light stand"
-      : "Rigid phone bracket holding smartphone at calibrated Autodarts Lens angle";
-
     printedParts.push({
-      name: partName,
+      name: isTripod ? "IT2 Phone Tripod Mount" : "IT2 Phone Mount",
       qty: 1,
       material: "PLA / PETG",
-      notes: partNotes,
+      notes: "Smartphone bracket",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: isTripod ? 55 : 65
@@ -654,7 +508,7 @@ function generateCustomBOM() {
       name: "IT2 Camera Arm & Pod Assembly",
       qty: 3,
       material: "PLA / PETG",
-      notes: "Bolts directly to Plasma pattern at 120°",
+      notes: "120° camera mounts",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 160
@@ -663,38 +517,38 @@ function generateCustomBOM() {
 
   if (userConfig.ring_type === "diy_std") {
     printedParts.push({
-      name: "IT2 DIY Light Ring Segments (Full 360°)",
+      name: "IT2 DIY Light Ring Segments",
       qty: 4,
       material: "PLA / PETG",
-      notes: "Slim circular light ring profile",
+      notes: "Ring segments",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 280
     });
     printedParts.push({
-      name: "IT2 Snap-On Curved Light Diffusers",
+      name: "IT2 Snap-On Diffusers",
       qty: 4,
-      material: "PLA Clear / Translucent White",
-      notes: "Diffuses LEDs for zero glare in camera sensors",
+      material: "PLA Clear / White",
+      notes: "LED diffusers",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 50
     });
   } else if (userConfig.ring_type === "diy_low") {
     printedParts.push({
-      name: "IT2 DIY Flat-Top Ring Segments (Low Ceiling)",
+      name: "IT2 DIY Flat-Top Ring Segments",
       qty: 4,
       material: "PLA / PETG",
-      notes: "Flattened top arch profile for rooms ≤ 2.0m tall",
+      notes: "Flat-top ring segments",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 270
     });
     printedParts.push({
-      name: "IT2 Snap-On Curved Light Diffusers",
+      name: "IT2 Snap-On Diffusers",
       qty: 4,
-      material: "PLA Clear / Translucent White",
-      notes: "Diffuses LEDs for zero glare in camera sensors",
+      material: "PLA Clear / White",
+      notes: "LED diffusers",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 50
@@ -704,7 +558,7 @@ function generateCustomBOM() {
       name: "IT2 Target Corona Conversion Adapters",
       qty: 3,
       material: "PLA / PETG",
-      notes: "Clamps to Target Corona magnetic frame",
+      notes: "Adapter brackets",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 70
@@ -713,10 +567,10 @@ function generateCustomBOM() {
 
   if (isDirectWall && !isLens) {
     printedParts.push({
-      name: "IT2 Light Ring Snap-On Cable Clips",
+      name: "IT2 Snap-On Cable Clips",
       qty: 6,
       material: "PLA / PETG",
-      notes: "Routes camera cables down ring to bottom Y-exit",
+      notes: "Ring clips",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 15
@@ -725,14 +579,13 @@ function generateCustomBOM() {
       name: "IT2 Bottom Y-Split Cable Exit Guide",
       qty: 1,
       material: "PLA / PETG",
-      notes: "Clean bundled exit for 3 USB camera cables",
+      notes: "Cable guide",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 12
     });
   }
 
-  // 2. Hardware & Fasteners
   const hardware = [];
 
   let m4Count = 0;
@@ -746,17 +599,17 @@ function generateCustomBOM() {
   }
   if (m4Count > 0) {
     hardware.push({
-      name: "Cylindrical Screws M4x10mm (DIN 912 / ISO 4762)",
+      name: "M4x10mm Cylindrical Screws",
       qty: m4Count,
-      notes: "Primary mechanical screws for arms and joints"
+      notes: "Arms and joints"
     });
   }
 
   if (!isLens) {
     hardware.push({
-      name: "Cylindrical Screws M2x6mm (DIN 912 / ISO 4762)",
+      name: "M2x6mm Cylindrical Screws",
       qty: 6,
-      notes: "2 screws per 32x32 camera PCB mount"
+      notes: "Camera PCB mounts"
     });
   }
 
@@ -766,9 +619,9 @@ function generateCustomBOM() {
     if (hasBaseplate) m4Inserts += 8;
     if (m4Inserts > 0) {
       hardware.push({
-        name: "M4 Brass Heat-Set Inserts (6.3mm OD, max 9mm length)",
+        name: "M4 Heat Inserts",
         qty: m4Inserts,
-        notes: "Melted into 3D prints for reusable steel threads"
+        notes: "Threaded inserts"
       });
     }
   }
@@ -776,9 +629,9 @@ function generateCustomBOM() {
   if (hasBaseplate) {
     const m6Count = isStand ? 7 : 3;
     hardware.push({
-      name: "M6 Brass Heat-Set Inserts (8mm OD)",
+      name: "M6 Heat Inserts",
       qty: m6Count,
-      notes: isStand ? "7x mandatory for stand brackets & Rota-Locks" : "3x mandatory for Rota-Lock levelers"
+      notes: isStand ? "Stand mounts & Rota-Locks" : "Rota-Lock levelers"
     });
   }
 
@@ -786,100 +639,91 @@ function generateCustomBOM() {
     hardware.push({
       name: "4.0mm Wood / Wall Screws + Plugs",
       qty: 3,
-      notes: "Anchors baseplate securely with only 3 holes"
+      notes: "Wall mounting"
     });
   } else if (isDirectWall) {
     hardware.push({
       name: "4.0mm Wood / Wall Screws + Plugs",
       qty: 8,
-      notes: "6 for IT2 arm brackets + 2 for board bracket"
+      notes: "Arm & board mounting"
     });
   }
 
-  if (isLens && userConfig.lens_mount_type === "tripod") {
-    hardware.push({
-      name: "1/4\" Camera Tripod Nut / Thread Adapter",
-      qty: 1,
-      notes: "Standard 1/4-20 camera tripod thread"
-    });
-  }
-
-  // 3. Electronics & Vision
   const electronics = [];
 
   if (isLens) {
     electronics.push({
-      name: "User Smartphone with Autodarts App",
+      name: "Smartphone with Autodarts",
       qty: 1,
-      notes: "Runs Autodarts Lens vision engine via phone camera & WiFi",
+      notes: "Vision camera",
       source: "Existing Device"
     });
     electronics.push({
-      name: "Long USB Phone Charging Cable (2m - 3m)",
+      name: "USB Phone Cable",
       qty: 1,
-      notes: "Recommended: Keeps phone charged during long matches",
-      source: "USB-C / Lightning Cable"
+      notes: "Power",
+      source: "Existing Cable"
     });
   } else {
     const camName =
       userConfig.cam_model === "ov2710"
-        ? "HBV OV2710 1080p 32x32 USB Camera Modules"
-        : "HBV OV9732 720p 32x32 USB Camera Modules";
+        ? "HBV OV2710 USB Camera Modules"
+        : "HBV OV9732 USB Camera Modules";
     electronics.push({
       name: camName,
       qty: 3,
-      notes: "Snap outer perforated 38x38 frame to 32x32mm with pliers",
-      source: "HBV Store (AliExpress / Amazon)"
+      notes: "32x32mm",
+      source: "AliExpress / Amazon"
     });
     electronics.push({
-      name: "USB Camera Connecting Cables (1.5m - 2m)",
+      name: "USB Camera Cables",
       qty: 3,
-      notes: "Included with HBV camera kits",
-      source: "Included with cameras"
+      notes: "Included with cameras",
+      source: "Camera Kit"
     });
   }
 
   if (userConfig.ring_type === "diy_std" || userConfig.ring_type === "diy_low") {
     electronics.push({
-      name: "White High-CRI LED Strip (1.5m length)",
+      name: "White LED Strip (1.5m)",
       qty: 1,
-      notes: "6000K daylight white, 12V or 5V",
+      notes: "Ring illumination",
       source: "AliExpress / Amazon"
     });
     electronics.push({
-      name: "12V / 5V 2A DC Power Supply with Barrel Jack",
+      name: "Power Supply",
       qty: 1,
-      notes: "Powers LED ring illumination",
-      source: "Standard electronics"
+      notes: "12V / 5V 2A",
+      source: "Standard Electronics"
     });
   }
 
   if (userConfig.lighting_mode === "wled") {
     electronics.push({
-      name: "ESP32 Development Board (Pre-flashed WLED)",
+      name: "ESP32 Board",
       qty: 1,
-      notes: "Controls reactive game animations via WiFi / UDP",
+      notes: "WLED firmware",
       source: "AliExpress / Amazon"
     });
     electronics.push({
-      name: "WS2812B / SK6812 Addressable 5V LED Strip (1.5m)",
+      name: "Addressable LED Strip (1.5m)",
       qty: 1,
-      notes: "Runs inside reactive channel for game celebrations",
+      notes: "WS2812B / SK6812",
       source: "AliExpress / Amazon"
     });
     electronics.push({
-      name: "5V 4A Dedicated Power Supply",
+      name: "5V 4A Power Supply",
       qty: 1,
-      notes: "Powers ESP32 and addressable LEDs",
-      source: "Electronics supplier"
+      notes: "LED & ESP32 power",
+      source: "Electronics Supplier"
     });
   }
 
   if (hasBaseplate && userConfig.baseplate_addons.includes("ambient_wled")) {
     electronics.push({
-      name: "WS2812B 5V Addressable LED Strip (1.0m)",
+      name: "Addressable LED Strip (1.0m)",
       qty: 1,
-      notes: "Rear perimeter halo glow behind board",
+      notes: "WS2812B ambient glow",
       source: "AliExpress / Amazon"
     });
   }
@@ -887,72 +731,55 @@ function generateCustomBOM() {
   if (!isLens) {
     if (userConfig.host_compute === "mini_pc") {
       electronics.push({
-        name: "Refurbished Mini-PC (Intel N95/N100 or i5 Tiny)",
+        name: "Mini-PC",
         qty: 1,
-        notes: "HP ProDesk, Dell Wyse, or Lenovo Tiny running Autodarts",
-        source: "eBay / Amazon Refurbished"
+        notes: "Autodarts host",
+        source: "Refurbished / New"
       });
     } else if (userConfig.host_compute === "pi") {
       electronics.push({
-        name: "Raspberry Pi 4 (4GB+) or Pi 5 + USB-C PSU",
+        name: "Raspberry Pi",
         qty: 1,
-        notes: "Runs Autodarts Linux server",
-        source: "Raspberry Pi Approved Reseller"
+        notes: "Autodarts host",
+        source: "Authorized Reseller"
       });
     } else if (userConfig.host_compute === "existing_pc") {
       electronics.push({
-        name: "Active USB 3.0 Repeater / Extension Cable (5m - 10m)",
+        name: "USB 3.0 Extension Cable / Hub",
         qty: 1,
-        notes: "Connects board cameras across the room to your desktop/laptop",
-        source: "Amazon"
+        notes: "PC connection",
+        source: "Standard Cable"
       });
     }
   }
 
-  // 4. Required Tools
   const tools = [];
-  if (isLens) {
-    tools.push({
-      name: "None Required",
-      notes: "Zero assembly tools needed for Autodarts Lens setup!"
-    });
-  } else {
+  if (!isLens) {
     tools.push(
-      { name: "Hex Key Set (Allen Wrenches)", notes: "For M4 and M2 cylindrical screws" },
-      { name: "Pliers / Flush Side-Cutters", notes: "For resizing HBV camera boards from 38x38 to 32x32" }
+      { name: "Hex Key Set", notes: "M4 and M2 screws" },
+      { name: "Pliers / Side-Cutters", notes: "Camera board trimming to 32x32" }
     );
     if (!isDirectTapping) {
-      tools.push({ name: "Soldering Iron with M4/M6 Insert Tip", notes: "For melting brass heat inserts into plastic" });
+      tools.push({ name: "Soldering Iron with Insert Tip", notes: "M4/M6 heat inserts" });
     }
   }
 
-  // Calculate Metrics
   const totalGrams = printedParts.reduce((acc, p) => acc + (p.estGrams * p.qty || 0), 0);
   const totalFasteners = hardware.reduce((acc, h) => acc + (h.qty || 0), 0);
   const totalPrintedPieces = printedParts.reduce((acc, p) => acc + (p.qty || 0), 0);
 
-  // Update Summary Subtitle
   const summaryText = document.getElementById("config-summary-text");
   if (summaryText) {
-    if (isLens) {
-      const mountDesc = userConfig.lens_mount_type === "tripod" ? "Phone Tripod / Stand Mount" : "Phone Ring / Surround Holder";
-      summaryText.textContent = `Autodarts Lens Setup • ${mountDesc} • 0 Wall Holes • 0 Assembly Screws • No Host PC Needed.`;
-    } else {
-      const mountLabel = isStand ? "Stand Mounted" : hasBaseplate ? "Baseplate Wall Mounted" : "Direct Wall Mounted";
-      summaryText.textContent = `Configured for 3-Camera (${userConfig.cam_model.toUpperCase()}) • ${mountLabel} • ${userConfig.assembly_style === "direct" ? "Direct Self-Tapping" : "Heat-Set Inserts"}.`;
-    }
+    summaryText.textContent = "";
   }
 
-  // Update Metric Cards
-  document.getElementById("metric-wall-holes").textContent = wallHoles === 0 ? "0 (Stand)" : `${wallHoles} Holes`;
-  document.getElementById("metric-printed-pieces").textContent = `${totalPrintedPieces} Files`;
+  document.getElementById("metric-wall-holes").textContent = wallHoles === 0 ? "0" : `${wallHoles}`;
+  document.getElementById("metric-printed-pieces").textContent = `${totalPrintedPieces}`;
   document.getElementById("metric-print-weight").textContent = `~${totalGrams}g`;
-  document.getElementById("metric-fastener-count").textContent = `${totalFasteners} Items`;
+  document.getElementById("metric-fastener-count").textContent = `${totalFasteners}`;
 
-  // Render Itemized Tables
   renderFinishedTables(printedParts, hardware, electronics, tools);
 
-  // Save for exports
   window.lastBOM = {
     printedParts,
     hardware,
@@ -965,28 +792,26 @@ function generateCustomBOM() {
   };
 }
 
-// Render Finished Tables
 function renderFinishedTables(printedParts, hardware, electronics, tools) {
   const container = document.getElementById("bom-tables-container");
   if (!container) return;
 
   container.innerHTML = `
-    <!-- 3D Printed Parts -->
     <div class="bom-card-group">
       <div class="bom-group-header">
         <div class="group-title-row">
           <span class="group-icon">🖨️</span>
-          <h3 class="group-title">3D Printed Parts Checklist</h3>
+          <h3 class="group-title">3D Printed Parts</h3>
         </div>
-        <span class="group-count">${printedParts.length} files (${printedParts.reduce((a, b) => a + b.qty, 0)} total pieces)</span>
+        <span class="group-count">${printedParts.length} files (${printedParts.reduce((a, b) => a + b.qty, 0)} pieces)</span>
       </div>
       <table class="bom-table">
         <thead>
           <tr>
-            <th>Component Name</th>
+            <th>Component</th>
             <th>Qty</th>
             <th>Material</th>
-            <th>Makerworld Link</th>
+            <th>Makerworld</th>
           </tr>
         </thead>
         <tbody>
@@ -997,14 +822,13 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
               <td>
                 <div class="part-name-cell">
                   <span class="part-name-bold">${p.name}</span>
-                  <span class="part-notes-dim">${p.notes}</span>
                 </div>
               </td>
               <td><span class="qty-pill">${p.qty}x</span></td>
               <td><span class="mat-tag ${p.material.includes("TPU") ? "mat-tpu" : "mat-pla"}">${p.material}</span></td>
               <td>
                 <a href="${p.modelUrl}" target="_blank" rel="noopener noreferrer" class="link-external">
-                  Makerworld #${p.modelId} ↗
+                  #${p.modelId} ↗
                 </a>
               </td>
             </tr>
@@ -1015,7 +839,6 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
       </table>
     </div>
 
-    <!-- Hardware & Fasteners -->
     <div class="bom-card-group">
       <div class="bom-group-header">
         <div class="group-title-row">
@@ -1027,9 +850,9 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
       <table class="bom-table">
         <thead>
           <tr>
-            <th>Item & Specification</th>
+            <th>Item</th>
             <th>Qty</th>
-            <th>Purpose / Location</th>
+            <th>Location</th>
           </tr>
         </thead>
         <tbody>
@@ -1048,12 +871,11 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
       </table>
     </div>
 
-    <!-- Electronics & Vision -->
     <div class="bom-card-group">
       <div class="bom-group-header">
         <div class="group-title-row">
           <span class="group-icon">⚡</span>
-          <h3 class="group-title">Electronics, Vision & Host</h3>
+          <h3 class="group-title">Electronics</h3>
         </div>
         <span class="group-count">${electronics.length} items</span>
       </div>
@@ -1062,7 +884,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
           <tr>
             <th>Component</th>
             <th>Qty</th>
-            <th>Source & Guidance</th>
+            <th>Source</th>
           </tr>
         </thead>
         <tbody>
@@ -1073,7 +895,6 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
               <td>
                 <div class="part-name-cell">
                   <span class="part-name-bold">${e.name}</span>
-                  <span class="part-notes-dim">${e.notes}</span>
                 </div>
               </td>
               <td><span class="qty-pill">${e.qty}x</span></td>
@@ -1086,12 +907,11 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
       </table>
     </div>
 
-    <!-- Tools Required -->
     <div class="bom-card-group">
       <div class="bom-group-header">
         <div class="group-title-row">
           <span class="group-icon">🛠️</span>
-          <h3 class="group-title">Assembly Tools Required</h3>
+          <h3 class="group-title">Tools</h3>
         </div>
       </div>
       <table class="bom-table">
@@ -1112,43 +932,41 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
   `;
 }
 
-// Copy Markdown formatted BOM
 function copyBOMToClipboard() {
   const data = window.lastBOM;
   if (!data) return;
 
-  let text = `# IT2-ADvisor - Custom Bill of Materials\n`;
-  text += `Generated via IT2-ADvisor by IteraThor\n\n`;
+  let text = `# IT2-ADvisor - Custom Bill of Materials\n\n`;
   text += `### Summary\n`;
   text += `- Wall Holes: ${data.wallHoles}\n`;
-  text += `- Total 3D Printed Parts: ${data.totalPrintedPieces} (~${data.totalGrams}g filament)\n`;
-  text += `- Total Fasteners: ${data.totalFasteners} items\n\n`;
+  text += `- Total 3D Printed Parts: ${data.totalPrintedPieces} (~${data.totalGrams}g)\n`;
+  text += `- Total Fasteners: ${data.totalFasteners}\n\n`;
 
-  text += `### 🖨️ 3D Printed Parts\n`;
+  text += `### 3D Printed Parts\n`;
   data.printedParts.forEach((p) => {
-    text += `- [ ] **${p.qty}x ${p.name}** (${p.material}) - ${p.notes} [Makerworld #${p.modelId}]\n`;
+    text += `- [ ] ${p.qty}x ${p.name} (${p.material}) [Makerworld #${p.modelId}]\n`;
   });
 
-  text += `\n### 🔩 Hardware & Fasteners\n`;
+  text += `\n### Hardware & Fasteners\n`;
   data.hardware.forEach((h) => {
-    text += `- [ ] **${h.qty}x ${h.name}** - ${h.notes}\n`;
+    text += `- [ ] ${h.qty}x ${h.name}\n`;
   });
 
-  text += `\n### ⚡ Electronics & Vision\n`;
+  text += `\n### Electronics\n`;
   data.electronics.forEach((e) => {
-    text += `- [ ] **${e.qty}x ${e.name}** - ${e.notes} [${e.source}]\n`;
+    text += `- [ ] ${e.qty}x ${e.name} [${e.source}]\n`;
   });
 
-  text += `\n### 🛠️ Required Tools\n`;
+  text += `\n### Tools\n`;
   data.tools.forEach((t) => {
-    text += `- ${t.name}: ${t.notes}\n`;
+    text += `- ${t.name}\n`;
   });
 
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById("btn-copy-bom");
     if (btn) {
       const orig = btn.textContent;
-      btn.textContent = "✓ Copied to Clipboard!";
+      btn.textContent = "✓ Copied";
       btn.style.background = "var(--accent-emerald)";
       btn.style.color = "#000";
       setTimeout(() => {
@@ -1160,24 +978,23 @@ function copyBOMToClipboard() {
   });
 }
 
-// Export CSV
 function exportBOMToCSV() {
   const data = window.lastBOM;
   if (!data) return;
 
-  let csv = "Category,Part Name,Quantity,Specification / Material,Purpose / Notes,Source\n";
+  let csv = "Category,Part Name,Quantity,Material,Source\n";
 
   data.printedParts.forEach((p) => {
-    csv += `"3D Print","${p.name}",${p.qty},"${p.material}","${p.notes}","Makerworld #${p.modelId}"\n`;
+    csv += `"3D Print","${p.name}",${p.qty},"${p.material}","Makerworld #${p.modelId}"\n`;
   });
   data.hardware.forEach((h) => {
-    csv += `"Hardware","${h.name}",${h.qty},"Fastener","${h.notes}","DIN 912 / ISO 4762"\n`;
+    csv += `"Hardware","${h.name}",${h.qty},"Fastener","DIN 912 / ISO 4762"\n`;
   });
   data.electronics.forEach((e) => {
-    csv += `"Electronics","${e.name}",${e.qty},"Electronics","${e.notes}","${e.source}"\n`;
+    csv += `"Electronics","${e.name}",${e.qty},"Electronics","${e.source}"\n`;
   });
   data.tools.forEach((t) => {
-    csv += `"Tools","${t.name}",1,"Tool","${t.notes}","Workshop"\n`;
+    csv += `"Tools","${t.name}",1,"Tool","Workshop"\n`;
   });
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
