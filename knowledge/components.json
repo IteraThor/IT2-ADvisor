@@ -96,7 +96,15 @@
       "name": "HBV OV9732",
       "vision_type": "multi_cam",
       "hardware": [
-        { "name": "HBV OV9732 USB Camera Modules", "qty": 3, "type": "electronics", "url": "https://aliexpress.com" },
+        {
+          "name": "HBV OV9732 USB Camera Modules",
+          "qty": 3,
+          "type": "electronics",
+          "url": "https://www.aliexpress.com/item/1005008831283832.html",
+          "price_key": "camera_ov9732",
+          "sku_col": "200000828-201589807",
+          "sku_variant": "OV9732 1MP - 3pcs 2M Cable"
+        },
         { "name": "M2x6mm Cylindrical Screws", "qty": 6, "type": "screws" },
         { "name": "USB Camera Cables", "qty": 3, "type": "electronics" }
       ],
@@ -110,7 +118,15 @@
       "name": "HBV OV2710",
       "vision_type": "multi_cam",
       "hardware": [
-        { "name": "HBV OV2710 USB Camera Modules", "qty": 3, "type": "electronics", "url": "https://aliexpress.com" },
+        {
+          "name": "HBV OV2710 USB Camera Modules",
+          "qty": 3,
+          "type": "electronics",
+          "url": "https://www.aliexpress.com/item/1005008597461995.html",
+          "price_key": "camera_ov2710",
+          "sku_col": "200000828-201589807",
+          "sku_variant": "OV2710 2MP - 38MM 3pcs 2M Cable"
+        },
         { "name": "M2x6mm Cylindrical Screws", "qty": 6, "type": "screws" },
         { "name": "USB Camera Cables", "qty": 3, "type": "electronics" }
       ],
@@ -158,8 +174,7 @@
         { "name": "12V / 5V Power Supply", "qty": 1, "type": "electronics" }
       ],
       "printed_parts": [
-        { "name": "IT2 DIY Light Ring Segments", "qty": 4, "material": "PLA / PETG", "model": "Makerworld 1334165" },
-        { "name": "IT2 Snap-On Diffusers", "qty": 4, "material": "PLA Clear / White", "model": "Makerworld 1334165" }
+        { "name": "IT2 DIY Light Ring Segments", "qty": 4, "material": "PLA / PETG", "model": "Makerworld 1334165" }
       ]
     },
     {
@@ -172,8 +187,7 @@
         { "name": "12V / 5V Power Supply", "qty": 1, "type": "electronics" }
       ],
       "printed_parts": [
-        { "name": "IT2 DIY Flat-Top Ring Segments", "qty": 4, "material": "PLA / PETG", "model": "Makerworld 1334165" },
-        { "name": "IT2 Snap-On Diffusers", "qty": 4, "material": "PLA Clear / White", "model": "Makerworld 1334165" }
+        { "name": "IT2 DIY Flat-Top Ring Segments", "qty": 4, "material": "PLA / PETG", "model": "Makerworld 1334165" }
       ]
     },
     {

@@ -1,0 +1,21 @@
+{
+  "camera_ov9732": {
+    "eur": 35.39,
+    "usd": 40.33,
+    "gbp": 30.45,
+    "name": "HBV OV9732 USB Camera Modules",
+    "url": "https://www.aliexpress.com/item/1005008831283832.html"
+  },
+  "camera_ov2710": {
+    "eur": 50.99,
+    "usd": 58.11,
+    "gbp": 43.88,
+    "name": "HBV OV2710 USB Camera Modules",
+    "url": "https://www.aliexpress.com/item/1005008597461995.html"
+  },
+  "_updated": "2026-09-27T15:50:02.668528+00:00",
+  "_fx_rates": {
+    "USD": 1.1396,
+    "GBP": 0.8605
+  }
+}
