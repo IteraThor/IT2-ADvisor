@@ -363,12 +363,27 @@ function showQuestion(qId) {
   const container = document.getElementById("question-card");
   if (!container) return;
 
-  const totalQuestionsEstimate = 6;
+  // Dynamic step count: Wall -> Baseplate Yes gives 7 questions. Direct Wall gives 6 questions.
+  // 1: q_vision, 2: q_cam_model, 3: q_mounting
+  // If stand: q_baseplate_addons (4), q_ring (5), q_compute (6), q_assembly (7) -> 7 total
+  // If wall + baseplate: q_wall_baseplate (4), q_baseplate_addons (5), q_ring (6), q_compute (7), q_assembly (8) -> 8 total
+  // If wall + direct: q_wall_baseplate (4), q_ring (5), q_compute (6), q_assembly (7) -> 7 total
+  let totalQuestions = 7;
+  if (userConfig.mount_type === "wall") {
+    totalQuestions = (userConfig.use_baseplate === false) ? 7 : 8;
+  } else if (userConfig.mount_type === "stand") {
+    totalQuestions = 7;
+  } else {
+    // Before mounting choice is made, default to 7
+    totalQuestions = 7;
+  }
+
   const currentStepNum = questionHistory.length + 1;
-  const progressPercent = Math.min(100, Math.round((currentStepNum / totalQuestionsEstimate) * 100));
+  // Cap current question progress at (currentStepNum - 1) / totalQuestions or proportionally so it never hits 100% until result screen
+  const progressPercent = Math.min(95, Math.round(((currentStepNum - 0.5) / totalQuestions) * 100));
 
   const counterEl = document.getElementById("step-counter");
-  if (counterEl) counterEl.textContent = `Question ${currentStepNum} of ${totalQuestionsEstimate}`;
+  if (counterEl) counterEl.textContent = `Question ${currentStepNum} of ${totalQuestions}`;
 
   const fillEl = document.getElementById("progress-fill");
   if (fillEl) fillEl.style.width = `${progressPercent}%`;
