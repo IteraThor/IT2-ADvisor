@@ -30,8 +30,7 @@ const QUESTIONS = {
       {
         id: "opt_3cam",
         letter: "A",
-        title: "Classic 3-Camera Rig (IT2 High Performance)",
-        desc: "3 dedicated 3D-printed arms with 32x32 USB vision boards for tournament-grade dart tracking.",
+        title: "Classic 3-Camera Rig",
         badge: "Active Standard",
         badgeType: "accent",
         action: () => {
@@ -43,7 +42,6 @@ const QUESTIONS = {
         id: "opt_lens",
         letter: "B",
         title: "Autodarts Lens (Single Smartphone)",
-        desc: "Single phone camera vision is in development and will be added in a future update.",
         badge: "Coming Soon",
         badgeType: "neutral",
         disabled: true,
@@ -442,7 +440,7 @@ function renderSingleSelectQuestion(container, q) {
               <span class="option-title">${opt.title}</span>
               ${opt.badge ? `<span class="option-badge badge-${opt.badgeType || "neutral"}">${opt.badge}</span>` : ""}
             </div>
-            <p class="option-desc">${opt.desc}</p>
+            ${opt.desc ? `<p class="option-desc">${opt.desc}</p>` : ""}
           </div>
         </button>
       `
