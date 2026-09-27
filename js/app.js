@@ -607,9 +607,13 @@ function generateCustomBOM() {
   else if (hasBaseplate && !isStand) wallHoles = 3;
   else if (isStand) wallHoles = 0;
 
+  const PLA_EUR_PER_GRAM = 0.012; // ~12€ / kg
+  const TPU_EUR_PER_GRAM = 0.030; // ~30€ / kg
+
   const printedParts = [];
 
   if (hasBaseplate) {
+    const g = 480;
     printedParts.push({
       name: "Baseplate",
       qty: 1,
@@ -618,12 +622,13 @@ function generateCustomBOM() {
       project: "IT2 Baseplate",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
-      estGrams: 480,
-      costEur: 9.6
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   }
 
   if (hasBaseplate && userConfig.baseplate_addons.includes("tpu_dampeners")) {
+    const g = 45;
     printedParts.push({
       name: "Sound Dampeners",
       qty: 3,
@@ -632,12 +637,13 @@ function generateCustomBOM() {
       project: "IT2 Baseplate",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
-      estGrams: 45,
-      costEur: 1.4
+      estGrams: g,
+      costEur: +(g * TPU_EUR_PER_GRAM).toFixed(2)
     });
   }
 
   if (hasBaseplate && userConfig.baseplate_addons.includes("shroud")) {
+    const g = 320;
     printedParts.push({
       name: "Shroud (Enclosed)",
       qty: 1,
@@ -646,12 +652,13 @@ function generateCustomBOM() {
       project: "IT2 Baseplate",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
-      estGrams: 320,
-      costEur: 6.4
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   }
 
   if (hasBaseplate && userConfig.baseplate_addons.includes("hardware_bay")) {
+    const g = 75;
     printedParts.push({
       name: "Rear Hardware Bay",
       qty: 1,
@@ -660,13 +667,14 @@ function generateCustomBOM() {
       project: "IT2 Baseplate",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
-      estGrams: 75,
-      costEur: 1.5
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   }
 
   if (isLens) {
     const isTripod = userConfig.lens_mount_type === "tripod";
+    const g = isTripod ? 55 : 65;
     printedParts.push({
       name: isTripod ? "Phone Tripod Mount" : "Phone Mount",
       qty: 1,
@@ -675,10 +683,11 @@ function generateCustomBOM() {
       project: "IT2 Camera Arm Assembly",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: isTripod ? 55 : 65,
-      costEur: 1.3
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   } else {
+    const g = 350; // Camera Arms ~350g total
     printedParts.push({
       name: "Camera Arms",
       qty: 3,
@@ -687,12 +696,13 @@ function generateCustomBOM() {
       project: "IT2 Camera Arm Assembly",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 160,
-      costEur: 3.2
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   }
 
   if (userConfig.ring_type === "diy_std") {
+    const g = 385; // DIY Light Ring ~385g total
     printedParts.push({
       name: "DIY Light Ring",
       qty: 4,
@@ -701,10 +711,11 @@ function generateCustomBOM() {
       project: "IT2 Camera Arm Assembly",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 330,
-      costEur: 6.6
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   } else if (userConfig.ring_type === "diy_low") {
+    const g = 385;
     printedParts.push({
       name: "DIY Flat-Top Light Ring",
       qty: 4,
@@ -713,10 +724,11 @@ function generateCustomBOM() {
       project: "IT2 Camera Arm Assembly",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 320,
-      costEur: 6.4
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   } else if (userConfig.ring_type === "corona") {
+    const g = 70;
     printedParts.push({
       name: "Target Corona Conversion Adapters",
       qty: 3,
@@ -725,12 +737,13 @@ function generateCustomBOM() {
       project: "IT2 Camera Arm Assembly",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 70,
-      costEur: 1.4
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   }
 
   if (isDirectWall && !isLens) {
+    const g = 7; // Cable Clips ~7g total
     printedParts.push({
       name: "Addon: Snap-On Cable Clips",
       qty: 6,
@@ -739,8 +752,8 @@ function generateCustomBOM() {
       project: "IT2 Camera Arm Assembly",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 15,
-      costEur: 0.3
+      estGrams: g,
+      costEur: +(g * PLA_EUR_PER_GRAM).toFixed(2)
     });
   }
 
@@ -927,7 +940,7 @@ function generateCustomBOM() {
     }
   }
 
-  const totalGrams = printedParts.reduce((acc, p) => acc + (p.estGrams * p.qty || 0), 0);
+  const totalGrams = printedParts.reduce((acc, p) => acc + (p.estGrams || 0), 0);
   const totalFasteners = hardware.reduce((acc, h) => acc + (h.qty || 0), 0);
   const totalPrintedPieces = printedParts.reduce((acc, p) => acc + (p.qty || 0), 0);
 
