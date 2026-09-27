@@ -1,3 +1,17 @@
+const CURRENCIES = {
+  USD: { symbol: "$", rate: 1.08 },
+  EUR: { symbol: "€", rate: 1.0 },
+  GBP: { symbol: "£", rate: 0.85 }
+};
+
+let currentCurrency = localStorage.getItem("it2_currency") || "EUR";
+
+function formatCurrency(eurAmount) {
+  const curr = CURRENCIES[currentCurrency] || CURRENCIES.EUR;
+  const converted = Math.round(eurAmount * curr.rate);
+  return `${curr.symbol}${converted}`;
+}
+
 const userConfig = {
   vision_mode: null,
   cam_model: "ov9732",
@@ -260,9 +274,36 @@ const QUESTIONS = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  initCurrencySwitcher();
   showQuestion(currentQuestionId);
   bindNavigationEvents();
 });
+
+function initCurrencySwitcher() {
+  const switcher = document.getElementById("currency-switcher");
+  if (!switcher) return;
+
+  switcher.querySelectorAll(".currency-btn").forEach((btn) => {
+    const code = btn.getAttribute("data-curr");
+    if (code === currentCurrency) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+
+    btn.addEventListener("click", () => {
+      currentCurrency = code;
+      localStorage.setItem("it2_currency", currentCurrency);
+      switcher.querySelectorAll(".currency-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const bomScreen = document.getElementById("screen-bom");
+      if (bomScreen && bomScreen.style.display !== "none") {
+        generateCustomBOM();
+      }
+    });
+  });
+}
 
 function showQuestion(qId) {
   const q = QUESTIONS[qId];
@@ -464,7 +505,8 @@ function generateCustomBOM() {
       notes: "4-segment backboard",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
-      estGrams: 480
+      estGrams: 480,
+      costEur: 9.6
     });
   }
 
@@ -476,7 +518,8 @@ function generateCustomBOM() {
       notes: "Vibration isolation",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
-      estGrams: 45
+      estGrams: 45,
+      costEur: 1.4
     });
   }
 
@@ -488,7 +531,8 @@ function generateCustomBOM() {
       notes: "Host bracket",
       modelId: "2782096",
       modelUrl: "https://makerworld.com/en/models/2782096",
-      estGrams: 75
+      estGrams: 75,
+      costEur: 1.5
     });
   }
 
@@ -501,7 +545,8 @@ function generateCustomBOM() {
       notes: "Smartphone bracket",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: isTripod ? 55 : 65
+      estGrams: isTripod ? 55 : 65,
+      costEur: 1.3
     });
   } else {
     printedParts.push({
@@ -511,7 +556,8 @@ function generateCustomBOM() {
       notes: "120° camera mounts",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 160
+      estGrams: 160,
+      costEur: 3.2
     });
   }
 
@@ -523,7 +569,8 @@ function generateCustomBOM() {
       notes: "Ring segments",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 280
+      estGrams: 280,
+      costEur: 5.6
     });
     printedParts.push({
       name: "IT2 Snap-On Diffusers",
@@ -532,7 +579,8 @@ function generateCustomBOM() {
       notes: "LED diffusers",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 50
+      estGrams: 50,
+      costEur: 1.0
     });
   } else if (userConfig.ring_type === "diy_low") {
     printedParts.push({
@@ -542,7 +590,8 @@ function generateCustomBOM() {
       notes: "Flat-top ring segments",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 270
+      estGrams: 270,
+      costEur: 5.4
     });
     printedParts.push({
       name: "IT2 Snap-On Diffusers",
@@ -551,7 +600,8 @@ function generateCustomBOM() {
       notes: "LED diffusers",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 50
+      estGrams: 50,
+      costEur: 1.0
     });
   } else if (userConfig.ring_type === "corona") {
     printedParts.push({
@@ -561,7 +611,8 @@ function generateCustomBOM() {
       notes: "Adapter brackets",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 70
+      estGrams: 70,
+      costEur: 1.4
     });
   }
 
@@ -573,7 +624,8 @@ function generateCustomBOM() {
       notes: "Ring clips",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 15
+      estGrams: 15,
+      costEur: 0.3
     });
     printedParts.push({
       name: "IT2 Bottom Y-Split Cable Exit Guide",
@@ -582,7 +634,8 @@ function generateCustomBOM() {
       notes: "Cable guide",
       modelId: "1334165",
       modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 12
+      estGrams: 12,
+      costEur: 0.25
     });
   }
 
@@ -601,7 +654,8 @@ function generateCustomBOM() {
     hardware.push({
       name: "M4x10mm Cylindrical Screws",
       qty: m4Count,
-      notes: "Arms and joints"
+      notes: "Arms and joints",
+      costEur: Math.round(m4Count * 0.15 * 10) / 10
     });
   }
 
@@ -609,7 +663,8 @@ function generateCustomBOM() {
     hardware.push({
       name: "M2x6mm Cylindrical Screws",
       qty: 6,
-      notes: "Camera PCB mounts"
+      notes: "Camera PCB mounts",
+      costEur: 0.8
     });
   }
 
@@ -621,7 +676,8 @@ function generateCustomBOM() {
       hardware.push({
         name: "M4 Heat Inserts",
         qty: m4Inserts,
-        notes: "Threaded inserts"
+        notes: "Threaded inserts",
+        costEur: Math.round(m4Inserts * 0.25 * 10) / 10
       });
     }
   }
@@ -631,7 +687,8 @@ function generateCustomBOM() {
     hardware.push({
       name: "M6 Heat Inserts",
       qty: m6Count,
-      notes: isStand ? "Stand mounts & Rota-Locks" : "Rota-Lock levelers"
+      notes: isStand ? "Stand mounts & Rota-Locks" : "Rota-Lock levelers",
+      costEur: Math.round(m6Count * 0.5 * 10) / 10
     });
   }
 
@@ -639,13 +696,15 @@ function generateCustomBOM() {
     hardware.push({
       name: "4.0mm Wood / Wall Screws + Plugs",
       qty: 3,
-      notes: "Wall mounting"
+      notes: "Wall mounting",
+      costEur: 1.0
     });
   } else if (isDirectWall) {
     hardware.push({
       name: "4.0mm Wood / Wall Screws + Plugs",
       qty: 8,
-      notes: "Arm & board mounting"
+      notes: "Arm & board mounting",
+      costEur: 1.8
     });
   }
 
@@ -656,30 +715,32 @@ function generateCustomBOM() {
       name: "Smartphone with Autodarts",
       qty: 1,
       notes: "Vision camera",
-      source: "Existing Device"
+      source: "Existing Device",
+      costEur: 0
     });
     electronics.push({
       name: "USB Phone Cable",
       qty: 1,
       notes: "Power",
-      source: "Existing Cable"
+      source: "Existing Cable",
+      costEur: 0
     });
   } else {
-    const camName =
-      userConfig.cam_model === "ov2710"
-        ? "HBV OV2710 USB Camera Modules"
-        : "HBV OV9732 USB Camera Modules";
+    const isOV2710 = userConfig.cam_model === "ov2710";
+    const camName = isOV2710 ? "HBV OV2710 USB Camera Modules" : "HBV OV9732 USB Camera Modules";
     electronics.push({
       name: camName,
       qty: 3,
       notes: "32x32mm",
-      source: "AliExpress / Amazon"
+      source: "AliExpress / Amazon",
+      costEur: isOV2710 ? 46.0 : 28.0
     });
     electronics.push({
       name: "USB Camera Cables",
       qty: 3,
       notes: "Included with cameras",
-      source: "Camera Kit"
+      source: "Camera Kit",
+      costEur: 0
     });
   }
 
@@ -688,13 +749,15 @@ function generateCustomBOM() {
       name: "White LED Strip (1.5m)",
       qty: 1,
       notes: "Ring illumination",
-      source: "AliExpress / Amazon"
+      source: "AliExpress / Amazon",
+      costEur: 8.0
     });
     electronics.push({
       name: "Power Supply",
       qty: 1,
       notes: "12V / 5V 2A",
-      source: "Standard Electronics"
+      source: "Standard Electronics",
+      costEur: 7.0
     });
   }
 
@@ -703,19 +766,22 @@ function generateCustomBOM() {
       name: "ESP32 Board",
       qty: 1,
       notes: "WLED firmware",
-      source: "AliExpress / Amazon"
+      source: "AliExpress / Amazon",
+      costEur: 5.0
     });
     electronics.push({
       name: "Addressable LED Strip (1.5m)",
       qty: 1,
       notes: "WS2812B / SK6812",
-      source: "AliExpress / Amazon"
+      source: "AliExpress / Amazon",
+      costEur: 8.0
     });
     electronics.push({
       name: "5V 4A Power Supply",
       qty: 1,
       notes: "LED & ESP32 power",
-      source: "Electronics Supplier"
+      source: "Electronics Supplier",
+      costEur: 11.0
     });
   }
 
@@ -724,7 +790,8 @@ function generateCustomBOM() {
       name: "Addressable LED Strip (1.0m)",
       qty: 1,
       notes: "WS2812B ambient glow",
-      source: "AliExpress / Amazon"
+      source: "AliExpress / Amazon",
+      costEur: 5.0
     });
   }
 
@@ -734,21 +801,24 @@ function generateCustomBOM() {
         name: "Mini-PC",
         qty: 1,
         notes: "Autodarts host",
-        source: "Refurbished / New"
+        source: "Refurbished / New",
+        costEur: 75.0
       });
     } else if (userConfig.host_compute === "pi") {
       electronics.push({
         name: "Raspberry Pi",
         qty: 1,
         notes: "Autodarts host",
-        source: "Authorized Reseller"
+        source: "Authorized Reseller",
+        costEur: 65.0
       });
     } else if (userConfig.host_compute === "existing_pc") {
       electronics.push({
         name: "USB 3.0 Extension Cable / Hub",
         qty: 1,
         notes: "PC connection",
-        source: "Standard Cable"
+        source: "Standard Cable",
+        costEur: 9.0
       });
     }
   }
@@ -768,6 +838,11 @@ function generateCustomBOM() {
   const totalFasteners = hardware.reduce((acc, h) => acc + (h.qty || 0), 0);
   const totalPrintedPieces = printedParts.reduce((acc, p) => acc + (p.qty || 0), 0);
 
+  const totalPrintedCost = printedParts.reduce((acc, p) => acc + (p.costEur || 0), 0);
+  const totalHardwareCost = hardware.reduce((acc, h) => acc + (h.costEur || 0), 0);
+  const totalElectronicsCost = electronics.reduce((acc, e) => acc + (e.costEur || 0), 0);
+  const totalCostEur = totalPrintedCost + totalHardwareCost + totalElectronicsCost;
+
   const summaryText = document.getElementById("config-summary-text");
   if (summaryText) {
     summaryText.textContent = "";
@@ -777,8 +852,9 @@ function generateCustomBOM() {
   document.getElementById("metric-printed-pieces").textContent = `${totalPrintedPieces}`;
   document.getElementById("metric-print-weight").textContent = `~${totalGrams}g`;
   document.getElementById("metric-fastener-count").textContent = `${totalFasteners}`;
+  document.getElementById("metric-est-cost").textContent = `~${formatCurrency(totalCostEur)}`;
 
-  renderFinishedTables(printedParts, hardware, electronics, tools);
+  renderFinishedTables(printedParts, hardware, electronics, tools, totalPrintedCost, totalHardwareCost, totalElectronicsCost);
 
   window.lastBOM = {
     printedParts,
@@ -788,11 +864,15 @@ function generateCustomBOM() {
     wallHoles,
     totalGrams,
     totalFasteners,
-    totalPrintedPieces
+    totalPrintedPieces,
+    totalPrintedCost,
+    totalHardwareCost,
+    totalElectronicsCost,
+    totalCostEur
   };
 }
 
-function renderFinishedTables(printedParts, hardware, electronics, tools) {
+function renderFinishedTables(printedParts, hardware, electronics, tools, printedCost, hardwareCost, electronicsCost) {
   const container = document.getElementById("bom-tables-container");
   if (!container) return;
 
@@ -803,7 +883,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
           <span class="group-icon">🖨️</span>
           <h3 class="group-title">3D Printed Parts</h3>
         </div>
-        <span class="group-count">${printedParts.length} files (${printedParts.reduce((a, b) => a + b.qty, 0)} pieces)</span>
+        <span class="group-count">${printedParts.length} files (${printedParts.reduce((a, b) => a + b.qty, 0)} pieces • ~${formatCurrency(printedCost)})</span>
       </div>
       <table class="bom-table">
         <thead>
@@ -811,6 +891,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
             <th>Component</th>
             <th>Qty</th>
             <th>Material</th>
+            <th>Est. Cost</th>
             <th>Makerworld</th>
           </tr>
         </thead>
@@ -826,6 +907,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
               </td>
               <td><span class="qty-pill">${p.qty}x</span></td>
               <td><span class="mat-tag ${p.material.includes("TPU") ? "mat-tpu" : "mat-pla"}">${p.material}</span></td>
+              <td><span class="cost-pill">~${formatCurrency(p.costEur)}</span></td>
               <td>
                 <a href="${p.modelUrl}" target="_blank" rel="noopener noreferrer" class="link-external">
                   #${p.modelId} ↗
@@ -845,7 +927,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
           <span class="group-icon">🔩</span>
           <h3 class="group-title">Hardware & Fasteners</h3>
         </div>
-        <span class="group-count">${hardware.reduce((a, b) => a + b.qty, 0)} items</span>
+        <span class="group-count">${hardware.reduce((a, b) => a + b.qty, 0)} items (~${formatCurrency(hardwareCost)})</span>
       </div>
       <table class="bom-table">
         <thead>
@@ -853,6 +935,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
             <th>Item</th>
             <th>Qty</th>
             <th>Location</th>
+            <th>Est. Cost</th>
           </tr>
         </thead>
         <tbody>
@@ -863,6 +946,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
               <td><span class="part-name-bold">${h.name}</span></td>
               <td><span class="qty-pill">${h.qty}x</span></td>
               <td class="part-notes-dim">${h.notes}</td>
+              <td><span class="cost-pill">~${formatCurrency(h.costEur)}</span></td>
             </tr>
           `
             )
@@ -877,7 +961,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
           <span class="group-icon">⚡</span>
           <h3 class="group-title">Electronics</h3>
         </div>
-        <span class="group-count">${electronics.length} items</span>
+        <span class="group-count">${electronics.length} items (~${formatCurrency(electronicsCost)})</span>
       </div>
       <table class="bom-table">
         <thead>
@@ -885,6 +969,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
             <th>Component</th>
             <th>Qty</th>
             <th>Source</th>
+            <th>Est. Cost</th>
           </tr>
         </thead>
         <tbody>
@@ -899,6 +984,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools) {
               </td>
               <td><span class="qty-pill">${e.qty}x</span></td>
               <td class="part-notes-dim">${e.source}</td>
+              <td><span class="cost-pill">${e.costEur === 0 ? "Free" : `~${formatCurrency(e.costEur)}`}</span></td>
             </tr>
           `
             )
@@ -940,21 +1026,23 @@ function copyBOMToClipboard() {
   text += `### Summary\n`;
   text += `- Wall Holes: ${data.wallHoles}\n`;
   text += `- Total 3D Printed Parts: ${data.totalPrintedPieces} (~${data.totalGrams}g)\n`;
-  text += `- Total Fasteners: ${data.totalFasteners}\n\n`;
+  text += `- Total Fasteners: ${data.totalFasteners}\n`;
+  text += `- Est. Total Cost: ${formatCurrency(data.totalCostEur)} (${currentCurrency})\n\n`;
 
   text += `### 3D Printed Parts\n`;
   data.printedParts.forEach((p) => {
-    text += `- [ ] ${p.qty}x ${p.name} (${p.material}) [Makerworld #${p.modelId}]\n`;
+    text += `- [ ] ${p.qty}x ${p.name} (${p.material}) ~${formatCurrency(p.costEur)} [Makerworld #${p.modelId}]\n`;
   });
 
   text += `\n### Hardware & Fasteners\n`;
   data.hardware.forEach((h) => {
-    text += `- [ ] ${h.qty}x ${h.name}\n`;
+    text += `- [ ] ${h.qty}x ${h.name} ~${formatCurrency(h.costEur)}\n`;
   });
 
   text += `\n### Electronics\n`;
   data.electronics.forEach((e) => {
-    text += `- [ ] ${e.qty}x ${e.name} [${e.source}]\n`;
+    const costStr = e.costEur === 0 ? "Free" : `~${formatCurrency(e.costEur)}`;
+    text += `- [ ] ${e.qty}x ${e.name} ${costStr} [${e.source}]\n`;
   });
 
   text += `\n### Tools\n`;
@@ -982,26 +1070,27 @@ function exportBOMToCSV() {
   const data = window.lastBOM;
   if (!data) return;
 
-  let csv = "Category,Part Name,Quantity,Material,Source\n";
+  let csv = `Category,Part Name,Quantity,Material,Est. Cost (${currentCurrency}),Source\n`;
 
   data.printedParts.forEach((p) => {
-    csv += `"3D Print","${p.name}",${p.qty},"${p.material}","Makerworld #${p.modelId}"\n`;
+    csv += `"3D Print","${p.name}",${p.qty},"${p.material}","${formatCurrency(p.costEur)}","Makerworld #${p.modelId}"\n`;
   });
   data.hardware.forEach((h) => {
-    csv += `"Hardware","${h.name}",${h.qty},"Fastener","DIN 912 / ISO 4762"\n`;
+    csv += `"Hardware","${h.name}",${h.qty},"Fastener","${formatCurrency(h.costEur)}","DIN 912 / ISO 4762"\n`;
   });
   data.electronics.forEach((e) => {
-    csv += `"Electronics","${e.name}",${e.qty},"Electronics","${e.source}"\n`;
+    const costStr = e.costEur === 0 ? "Free" : formatCurrency(e.costEur);
+    csv += `"Electronics","${e.name}",${e.qty},"Electronics","${costStr}","${e.source}"\n`;
   });
   data.tools.forEach((t) => {
-    csv += `"Tools","${t.name}",1,"Tool","Workshop"\n`;
+    csv += `"Tools","${t.name}",1,"Tool","0","Workshop"\n`;
   });
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `IT2-Custom-BOM-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `IT2-Custom-BOM-${currentCurrency}-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

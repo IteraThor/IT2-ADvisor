@@ -17,11 +17,18 @@
       <span class="nav-logo">🎯</span>
       <span class="nav-title">IT2-ADvisor</span>
     </div>
-    <div class="nav-links">
-      <a href="https://makerworld.com/en/models/1334165" target="_blank" rel="noopener noreferrer">IT2 System ↗</a>
-      <a href="https://makerworld.com/en/models/2782096" target="_blank" rel="noopener noreferrer">Baseplate ↗</a>
-      <a href="https://github.com/IteraThor/IT2-Documentation" target="_blank" rel="noopener noreferrer">Docs ↗</a>
-      <a href="https://discord.com/invite/pZAjmwV5kE" target="_blank" rel="noopener noreferrer">Discord ↗</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="https://makerworld.com/en/models/1334165" target="_blank" rel="noopener noreferrer">IT2 System ↗</a>
+        <a href="https://makerworld.com/en/models/2782096" target="_blank" rel="noopener noreferrer">Baseplate ↗</a>
+        <a href="https://github.com/IteraThor/IT2-Documentation" target="_blank" rel="noopener noreferrer">Docs ↗</a>
+        <a href="https://discord.com/invite/pZAjmwV5kE" target="_blank" rel="noopener noreferrer">Discord ↗</a>
+      </div>
+      <div class="currency-switcher" id="currency-switcher">
+        <button type="button" class="currency-btn" data-curr="USD">USD $</button>
+        <button type="button" class="currency-btn active" data-curr="EUR">EUR €</button>
+        <button type="button" class="currency-btn" data-curr="GBP">GBP £</button>
+      </div>
     </div>
   </header>
 
@@ -83,6 +90,10 @@
         <div class="metric-card">
           <span class="metric-num" id="metric-fastener-count">26</span>
           <span class="metric-label">Fasteners</span>
+        </div>
+        <div class="metric-card metric-card-cost">
+          <span class="metric-num" id="metric-est-cost">€0</span>
+          <span class="metric-label">Est. Build Cost</span>
         </div>
       </div>
 
