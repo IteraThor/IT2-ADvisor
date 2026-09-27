@@ -323,11 +323,17 @@ const QUESTIONS = {
   }
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+function initApp() {
   initCurrencySwitcher();
   showQuestion(currentQuestionId);
   bindNavigationEvents();
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
 
 function initCurrencySwitcher() {
   const switcher = document.getElementById("currency-switcher");
@@ -563,27 +569,6 @@ function bindNavigationEvents() {
 
   const printBtn = document.getElementById("btn-print-bom");
   if (printBtn) printBtn.addEventListener("click", () => window.print());
-
-  document.querySelectorAll(".currency-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentCurrency = btn.getAttribute("data-curr");
-      localStorage.setItem("it2_currency", currentCurrency);
-      document.querySelectorAll(".currency-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      if (currentQuestionId) showQuestion(currentQuestionId);
-      const bomVisible = document.getElementById("screen-bom")?.style.display !== "none";
-      if (bomVisible) generateCustomBOM();
-    });
-  });
-
-  const savedCurr = localStorage.getItem("it2_currency");
-  if (savedCurr) {
-    const savedBtn = document.querySelector(`.currency-btn[data-curr="${savedCurr}"]`);
-    if (savedBtn) {
-      document.querySelectorAll(".currency-btn").forEach((b) => b.classList.remove("active"));
-      savedBtn.classList.add("active");
-    }
-  }
 }
 
 function finishQuestionnaire() {
