@@ -249,8 +249,7 @@
       "name": "Ring Clips with Y-Exit",
       "hardware": [],
       "printed_parts": [
-        { "name": "IT2 Snap-On Ring Cable Clips", "qty": 6, "material": "PLA / PETG", "model": "Makerworld 1334165" },
-        { "name": "IT2 Bottom Y-Split Cable Exit Guide", "qty": 1, "material": "PLA / PETG", "model": "Makerworld 1334165" }
+        { "name": "Addon: Snap-On Cable Clips", "qty": 6, "material": "PLA / PETG", "model": "Makerworld 1334165" }
       ]
     },
     {

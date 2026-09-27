@@ -732,7 +732,7 @@ function generateCustomBOM() {
 
   if (isDirectWall && !isLens) {
     printedParts.push({
-      name: "Snap-On Cable Clips",
+      name: "Addon: Snap-On Cable Clips",
       qty: 6,
       material: "PLA / PETG",
       notes: "Ring clips",
@@ -741,17 +741,6 @@ function generateCustomBOM() {
       modelUrl: "https://makerworld.com/en/models/1334165",
       estGrams: 15,
       costEur: 0.3
-    });
-    printedParts.push({
-      name: "Bottom Y-Split Cable Exit Guide",
-      qty: 1,
-      material: "PLA / PETG",
-      notes: "Cable guide",
-      project: "IT2 Camera Arm Assembly",
-      modelId: "1334165",
-      modelUrl: "https://makerworld.com/en/models/1334165",
-      estGrams: 12,
-      costEur: 0.25
     });
   }
 
