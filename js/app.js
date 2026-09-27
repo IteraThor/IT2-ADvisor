@@ -984,6 +984,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
             <th>Component</th>
             <th>Qty</th>
             <th>Material</th>
+            <th>Est. Weight</th>
             <th>Est. Cost</th>
             <th>Makerworld</th>
           </tr>
@@ -1008,7 +1009,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
               .map((grp) => {
                 const headerRow = `
                   <tr class="project-group-row">
-                    <td colspan="5">
+                    <td colspan="6">
                       <div class="project-group-cell">
                         <span class="project-badge-title">
                           <span>📦</span>
@@ -1032,6 +1033,7 @@ function renderFinishedTables(printedParts, hardware, electronics, tools, printe
                     </td>
                     <td><span class="qty-pill">${p.qty}x</span></td>
                     <td><span class="mat-tag ${p.material.includes("TPU") ? "mat-tpu" : "mat-pla"}">${p.material}</span></td>
+                    <td><span class="weight-pill">${p.estGrams ? `~${p.estGrams}g` : "-"}</span></td>
                     <td><span class="cost-pill">~${formatCurrency(p.costEur)}</span></td>
                     <td>
                       <a href="${p.modelUrl}" target="_blank" rel="noopener noreferrer" class="link-external">
