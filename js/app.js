@@ -25,36 +25,29 @@ const QUESTIONS = {
   q_vision: {
     category: "Vision Architecture",
     title: "How do you want to track your darts?",
-    subtitle: "Autodarts now supports single-smartphone tracking alongside the classic 3-camera rig.",
+    subtitle: "Autodarts scoring setup with tournament-grade camera tracking.",
     options: [
       {
-        id: "opt_lens",
-        letter: "A",
-        title: "Autodarts Lens (Use My Smartphone)",
-        desc: "Single phone mounts directly to the light ring. Zero external cameras, zero USB cables, no dedicated PC needed!",
-        badge: "Ultra-Budget & Minimalist",
-        badgeType: "success",
-        action: () => {
-          userConfig.vision_mode = "lens";
-          userConfig.host_compute = "none";
-          userConfig.mount_type = "none";
-          userConfig.use_baseplate = false;
-          userConfig.ring_type = "none";
-          userConfig.assembly_style = "direct";
-          return "q_lens_mount";
-        }
-      },
-      {
         id: "opt_3cam",
-        letter: "B",
+        letter: "A",
         title: "Classic 3-Camera Rig (IT2 High Performance)",
         desc: "3 dedicated 3D-printed arms with 32x32 USB vision boards for tournament-grade dart tracking.",
-        badge: "Full Hardware Rig",
+        badge: "Active Standard",
         badgeType: "accent",
         action: () => {
           userConfig.vision_mode = "3cam";
           return "q_cam_model";
         }
+      },
+      {
+        id: "opt_lens",
+        letter: "B",
+        title: "Autodarts Lens (Single Smartphone)",
+        desc: "Single phone camera vision is in development and will be added in a future update.",
+        badge: "Coming Soon",
+        badgeType: "neutral",
+        disabled: true,
+        action: null
       }
     ]
   },
@@ -438,7 +431,11 @@ function renderSingleSelectQuestion(container, q) {
       ${q.options
         .map(
           (opt) => `
-        <button type="button" class="option-item" data-opt="${opt.id}" id="opt-${opt.id}">
+        <button type="button" 
+                class="option-item ${opt.disabled ? "disabled" : ""}" 
+                data-opt="${opt.id}" 
+                id="opt-${opt.id}"
+                ${opt.disabled ? "disabled aria-disabled='true'" : ""}>
           <span class="option-letter">${opt.letter}</span>
           <div class="option-text-wrap">
             <div class="option-title-row">
@@ -458,7 +455,7 @@ function renderSingleSelectQuestion(container, q) {
     btn.addEventListener("click", () => {
       const optId = btn.getAttribute("data-opt");
       const opt = q.options.find((o) => o.id === optId);
-      if (!opt) return;
+      if (!opt || opt.disabled || !opt.action) return;
 
       btn.classList.add("selected");
       const nextQId = opt.action();

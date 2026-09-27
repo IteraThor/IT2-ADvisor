@@ -245,6 +245,19 @@ body {
   box-shadow: 0 0 20px var(--accent-glow);
 }
 
+.option-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.6);
+}
+
+.option-item.disabled:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--border-card);
+  transform: none;
+}
+
 .option-letter {
   width: 32px;
   height: 32px;
