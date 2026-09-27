@@ -908,7 +908,7 @@ function generateCustomBOM() {
         qty: 1,
         notes: "Autodarts host",
         source: "Refurbished / New",
-        costEur: 75.0
+        costEur: 50.0
       });
     } else if (userConfig.host_compute === "pi") {
       electronics.push({
