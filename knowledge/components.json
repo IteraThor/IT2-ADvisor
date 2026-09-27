@@ -1,0 +1,309 @@
+{
+  "system": {
+    "name": "IT2 Autodarts Scoring System",
+    "author": "IteraThor",
+    "makerworld_system_url": "https://makerworld.com/en/models/1334165",
+    "makerworld_baseplate_url": "https://makerworld.com/en/models/2782096",
+    "github_docs_url": "https://github.com/IteraThor/IT2-Documentation",
+    "version": "2026.1"
+  },
+  "categories": [
+    {
+      "id": "mounting",
+      "name": "Mounting & Structure",
+      "description": "Where and how the dartboard and IT2 frame are mounted."
+    },
+    {
+      "id": "baseplate_options",
+      "name": "Baseplate Add-ons",
+      "description": "Modular features unlocked when using the IT2 4-part Baseplate."
+    },
+    {
+      "id": "vision",
+      "name": "Vision Subsystem",
+      "description": "Camera architecture for automatic dart scoring."
+    },
+    {
+      "id": "ring",
+      "name": "Light Ring & Frame",
+      "description": "Physical lighting ring and arm mounting geometry."
+    },
+    {
+      "id": "lighting_mode",
+      "name": "Lighting Mode",
+      "description": "Board illumination vs. dynamic reactive gameplay lighting."
+    },
+    {
+      "id": "compute",
+      "name": "Host Computer & Wiring",
+      "description": "Device running the Autodarts software and cable routing strategy."
+    },
+    {
+      "id": "assembly_style",
+      "name": "Assembly & Fasteners",
+      "description": "Fastening method (heat-set threaded inserts vs direct-to-plastic screws)."
+    }
+  ],
+  "components": [
+    {
+      "id": "mount_direct_wall",
+      "category": "mounting",
+      "name": "Direct Wall Mount (No Baseplate)",
+      "description": "Mounts IT2 arms/brackets and dartboard directly into drywall or masonry.",
+      "wall_holes": 8,
+      "requires_baseplate": false,
+      "hardware": [
+        { "name": "4mm Wood / Wall Screws", "qty": 8, "type": "screws", "comment": "For mounting arms and board to wall" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "mount_baseplate_wall",
+      "category": "mounting",
+      "name": "IT2 Baseplate (Wall Installation)",
+      "description": "Rigid 4-segment interlocking baseplate. Drastically reduces wall damage and centers all arms.",
+      "wall_holes": 3,
+      "requires_baseplate": true,
+      "hardware": [
+        { "name": "M4x10mm Cylindrical Screws (DIN 912)", "qty": 8, "type": "screws", "comment": "Baseplate segment assembly" },
+        { "name": "M6 Heat Inserts (8mm OD)", "qty": 3, "type": "inserts", "comment": "Mandatory for Rota Lock levelers" },
+        { "name": "4mm Wood / Wall Screws", "qty": 3, "type": "screws", "comment": "Anchors baseplate to wall" }
+      ],
+      "printed_parts": [
+        { "name": "IT2 Baseplate 4-Segment Set", "qty": 1, "material": "PLA / PETG", "model": "Makerworld 2782096" }
+      ]
+    },
+    {
+      "id": "mount_baseplate_stand",
+      "category": "mounting",
+      "name": "IT2 Baseplate (Dartboard Stand Mount)",
+      "description": "Direct native mounting to mobile dart stands (e.g. Winmau Xtreme 2) without modifications.",
+      "wall_holes": 0,
+      "requires_baseplate": true,
+      "hardware": [
+        { "name": "M4x10mm Cylindrical Screws (DIN 912)", "qty": 8, "type": "screws", "comment": "Baseplate assembly" },
+        { "name": "M6 Heat Inserts (8mm OD)", "qty": 7, "type": "inserts", "comment": "Mandatory for Stand brackets & Rota Locks" }
+      ],
+      "printed_parts": [
+        { "name": "IT2 Baseplate 4-Segment Set", "qty": 1, "material": "PLA / PETG", "model": "Makerworld 2782096" }
+      ]
+    },
+    {
+      "id": "addon_tpu_dampeners",
+      "category": "baseplate_options",
+      "name": "TPU Sound & Vibration Dampeners",
+      "description": "Flexible inserts placed into the baseplate circular recesses to absorb dart impact thud from traveling into walls.",
+      "requires_baseplate": true,
+      "hardware": [],
+      "printed_parts": [
+        { "name": "Baseplate Sound Dampening Pads", "qty": 3, "material": "TPU 95A", "model": "Makerworld 2782096" }
+      ]
+    },
+    {
+      "id": "addon_hardware_bay",
+      "category": "baseplate_options",
+      "name": "Hidden Rear Hardware Bay",
+      "description": "Integrated bracket module behind the board to conceal a Mini-PC, Raspberry Pi, or WLED controller.",
+      "requires_baseplate": true,
+      "hardware": [
+        { "name": "M4x10mm Cylindrical Screws (DIN 912)", "qty": 2, "type": "screws", "comment": "Mounts hardware bracket" }
+      ],
+      "printed_parts": [
+        { "name": "Rear Hardware Bay Mount", "qty": 1, "material": "PLA / PETG", "model": "Makerworld 2782096" }
+      ]
+    },
+    {
+      "id": "addon_baseplate_ambient_wled",
+      "category": "baseplate_options",
+      "name": "Baseplate Ambient Halo Glow",
+      "description": "Perimeter channel on baseplate for addressable LED strip creating a soft ambient halo on the wall.",
+      "requires_baseplate": true,
+      "hardware": [
+        { "name": "WS2812B / SK6812 LED Strip (1m)", "qty": 1, "type": "electronics", "comment": "Rear ambient wall glow" },
+        { "name": "5V Power & Signal Wire Lead", "qty": 1, "type": "electronics", "comment": "Connects to WLED controller" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "vision_3cam_ov9732",
+      "category": "vision",
+      "name": "3-Camera System (HBV OV9732 Budget Sensors)",
+      "description": "720p high-speed vision boards. Extremely reliable dart detection with low CPU overhead.",
+      "vision_type": "multi_cam",
+      "hardware": [
+        { "name": "HBV OV9732 32x32 USB Camera Modules", "qty": 3, "type": "electronics", "url": "https://aliexpress.com", "comment": "Snap outer 38x38 frame to 32x32" },
+        { "name": "M2x6mm Cylindrical Screws (DIN 912)", "qty": 6, "type": "screws", "comment": "Mounts camera PCBs into pods" },
+        { "name": "USB Camera Cables (1.5m - 2m)", "qty": 3, "type": "electronics", "comment": "Included with HBV modules" }
+      ],
+      "printed_parts": [
+        { "name": "IT2 Camera Arm & Pod Set", "qty": 3, "material": "PLA / PETG", "model": "Makerworld 1334165" }
+      ]
+    },
+    {
+      "id": "vision_3cam_ov2710",
+      "category": "vision",
+      "name": "3-Camera System (HBV OV2710 Premium 1080p)",
+      "description": "1080p crisp vision boards. High resolution visual feed with premium dart tracking.",
+      "vision_type": "multi_cam",
+      "hardware": [
+        { "name": "HBV OV2710 32x32 USB Camera Modules", "qty": 3, "type": "electronics", "url": "https://aliexpress.com", "comment": "Snap outer 38x38 frame to 32x32" },
+        { "name": "M2x6mm Cylindrical Screws (DIN 912)", "qty": 6, "type": "screws", "comment": "Mounts camera PCBs into pods" },
+        { "name": "USB Camera Cables (1.5m - 2m)", "qty": 3, "type": "electronics", "comment": "Included with HBV modules" }
+      ],
+      "printed_parts": [
+        { "name": "IT2 Camera Arm & Pod Set", "qty": 3, "material": "PLA / PETG", "model": "Makerworld 1334165" }
+      ]
+    },
+    {
+      "id": "vision_autodarts_lens",
+      "category": "vision",
+      "name": "Autodarts Lens (Single Smartphone Vision)",
+      "description": "Uses a single smartphone mounted to the light ring to run Autodarts. Eliminates camera arms, PCB cameras, USB cables, and PC.",
+      "vision_type": "phone_lens",
+      "hardware": [],
+      "printed_parts": [
+        { "name": "IT2 Ring-Mounted Calibrated Phone Mount", "qty": 1, "material": "PLA / PETG", "model": "Makerworld 1334165" }
+      ]
+    },
+    {
+      "id": "ring_winmau_plasma",
+      "category": "ring",
+      "name": "Winmau Plasma Light Ring (Existing Commercial)",
+      "description": "Native direct fit! The IT2 system geometry is built around the Winmau Plasma hole pattern. Needs 0 adapters.",
+      "hardware": [
+        { "name": "M4x10mm Cylindrical Screws (DIN 912)", "qty": 6, "type": "screws", "comment": "Mounts arms directly to Plasma frame" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "ring_target_corona",
+      "category": "ring",
+      "name": "Target Corona Light Ring (Existing Commercial)",
+      "description": "Adapts the Target Corona magnetic ring to the IT2 system geometry using dedicated printed adapter brackets.",
+      "hardware": [
+        { "name": "M4x10mm Cylindrical Screws (DIN 912)", "qty": 12, "type": "screws", "comment": "Secures Corona adapters and arms" }
+      ],
+      "printed_parts": [
+        { "name": "IT2 Target Corona Conversion Adapters", "qty": 3, "material": "PLA / PETG", "model": "Makerworld 1334165" }
+      ]
+    },
+    {
+      "id": "ring_diy_standard",
+      "category": "ring",
+      "name": "IT2 DIY 3D-Printed Light Ring (Standard Ceiling ≥ 2.0m)",
+      "description": "Full 360-degree slim circular light ring with clip-on translucent diffusers. Slimmest 3D-printed design.",
+      "hardware": [
+        { "name": "M4x10mm Cylindrical Screws (DIN 912)", "qty": 12, "type": "screws", "comment": "Joins ring segments and arms" },
+        { "name": "White High-CRI LED Strip (1.5m)", "qty": 1, "type": "electronics", "comment": "Internal illumination" },
+        { "name": "12V / 5V 2A Power Supply with DC Barrel Jack", "qty": 1, "type": "electronics", "comment": "Ring power supply" }
+      ],
+      "printed_parts": [
+        { "name": "IT2 DIY Light Ring Segments (Full Circle)", "qty": 4, "material": "PLA / PETG", "model": "Makerworld 1334165" },
+        { "name": "IT2 Snap-On Curved Diffusers", "qty": 4, "material": "PLA Clear / White", "model": "Makerworld 1334165" }
+      ]
+    },
+    {
+      "id": "ring_diy_low_ceiling",
+      "category": "ring",
+      "name": "IT2 DIY Flat-Top Light Ring (Low Ceiling ≤ 2.0m)",
+      "description": "Flattened top arch profile engineered specifically for low basements and attic rooms under 2 meters high.",
+      "hardware": [
+        { "name": "M4x10mm Cylindrical Screws (DIN 912)", "qty": 12, "type": "screws", "comment": "Joins ring segments and arms" },
+        { "name": "White High-CRI LED Strip (1.5m)", "qty": 1, "type": "electronics", "comment": "Internal illumination" },
+        { "name": "12V / 5V 2A Power Supply with DC Barrel Jack", "qty": 1, "type": "electronics", "comment": "Ring power supply" }
+      ],
+      "printed_parts": [
+        { "name": "IT2 DIY Flat-Top Low-Ceiling Ring Segments", "qty": 4, "material": "PLA / PETG", "model": "Makerworld 1334165" },
+        { "name": "IT2 Snap-On Curved Diffusers", "qty": 4, "material": "PLA Clear / White", "model": "Makerworld 1334165" }
+      ]
+    },
+    {
+      "id": "lighting_standard_white",
+      "category": "lighting_mode",
+      "name": "Functional Clean White Lighting",
+      "description": "Steady, flicker-free white lighting optimized for camera tracking contrast and gameplay visibility.",
+      "hardware": [],
+      "printed_parts": []
+    },
+    {
+      "id": "lighting_reactive_wled",
+      "category": "lighting_mode",
+      "name": "Dual-Channel Reactive WLED Lighting",
+      "description": "Dual-channel light ring or ambient lighting reacting to gameplay (180 celebrations, checkout animations, miss effects).",
+      "hardware": [
+        { "name": "ESP32 WLED Controller Board", "qty": 1, "type": "electronics", "comment": "Runs WLED firmware" },
+        { "name": "WS2812B / SK6812 5V Addressable LED Strip", "qty": 1, "type": "electronics", "comment": "Reactive RGB strip" },
+        { "name": "5V 4A Dedicated Power Supply", "qty": 1, "type": "electronics", "comment": "Powers ESP32 & addressable LEDs" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "compute_existing_pc",
+      "category": "compute",
+      "name": "Use Existing PC or Laptop",
+      "description": "Connects cameras directly to your existing desktop PC or gaming laptop.",
+      "hardware": [
+        { "name": "Active USB 3.0 Extension Cable (5m/10m) or Powered USB Hub", "qty": 1, "type": "electronics", "comment": "Bridges distance from board to PC" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "compute_mini_pc",
+      "category": "compute",
+      "name": "Dedicated Refurbished Mini-PC (HP / Dell / Lenovo Tiny)",
+      "description": "Small, silent, dedicated PC (Intel N95/N100 or refurbished i5 Tiny) mounted near or behind the board.",
+      "hardware": [
+        { "name": "Refurbished Mini PC (e.g. HP ProDesk / Dell Wyse / Lenovo Tiny)", "qty": 1, "type": "electronics", "comment": "Dedicated Autodarts host" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "compute_raspberry_pi",
+      "category": "compute",
+      "name": "Raspberry Pi 4 / 5",
+      "description": "Compact single-board computer running Linux / Autodarts.",
+      "hardware": [
+        { "name": "Raspberry Pi 4 (4GB+) or Pi 5", "qty": 1, "type": "electronics", "comment": "ARM host" },
+        { "name": "Official USB-C Power Supply", "qty": 1, "type": "electronics", "comment": "Pi power" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "cable_routing_baseplate",
+      "category": "compute",
+      "name": "Hidden Baseplate Raceways",
+      "description": "Cables route internally through molded channels behind the board straight to hardware bay.",
+      "hardware": [],
+      "printed_parts": []
+    },
+    {
+      "id": "cable_routing_clips_y",
+      "category": "compute",
+      "name": "Snap-On Ring Clips with Y-Exit",
+      "description": "3D-printed clips snapping along the light ring contour, converging 3 camera cables into a single bottom Y-exit.",
+      "hardware": [],
+      "printed_parts": [
+        { "name": "IT2 Snap-On Ring Cable Clips", "qty": 6, "material": "PLA / PETG", "model": "Makerworld 1334165" },
+        { "name": "IT2 Bottom Y-Split Cable Exit Guide", "qty": 1, "material": "PLA / PETG", "model": "Makerworld 1334165" }
+      ]
+    },
+    {
+      "id": "fasteners_heat_inserts",
+      "category": "assembly_style",
+      "name": "Heat-Set Threaded Brass Inserts (M4 / M6)",
+      "description": "Professional brass threaded inserts melted into plastic with a soldering iron. Can be assembled and disassembled indefinitely without wear.",
+      "hardware": [
+        { "name": "M4 Heat Inserts (6.3mm OD, max 9mm length)", "qty": 12, "type": "inserts", "comment": "For camera arms and ring joints" }
+      ],
+      "printed_parts": []
+    },
+    {
+      "id": "fasteners_direct_tapping",
+      "category": "assembly_style",
+      "name": "Direct Self-Tapping (No Inserts)",
+      "description": "Taps M4 cylindrical screws directly into undersized 3D-printed holes. Zero special tools or soldering iron needed.",
+      "hardware": [],
+      "printed_parts": []
+    }
+  ]
+}

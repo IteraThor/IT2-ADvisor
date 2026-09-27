@@ -1,0 +1,113 @@
+{
+  "rules": [
+    {
+      "id": "stand_requires_baseplate",
+      "trigger": { "field": "mounting", "value": "mount_baseplate_stand" },
+      "effects": [
+        { "action": "set_value", "field": "has_baseplate", "value": true },
+        { "action": "lock_field", "field": "has_baseplate", "reason": "Dartboard stands (like Winmau Xtreme 2) physically require the IT2 Baseplate adapter." }
+      ]
+    },
+    {
+      "id": "baseplate_features_visibility",
+      "condition": { "field": "has_baseplate", "value": false },
+      "effects": [
+        { "action": "disable_options", "field": "baseplate_options", "reason": "TPU sound dampening, hardware bay, and ambient halo require the Baseplate." }
+      ]
+    },
+    {
+      "id": "lens_mode_eliminates_cams",
+      "trigger": { "field": "vision", "value": "vision_autodarts_lens" },
+      "effects": [
+        { "action": "disable_field", "field": "compute", "value": "none", "reason": "Autodarts Lens runs directly on your smartphone; no external host PC or USB hub is required." },
+        { "action": "disable_field", "field": "cable_routing", "value": "none", "reason": "No camera USB cables to route." }
+      ]
+    },
+    {
+      "id": "corona_adds_adapters",
+      "trigger": { "field": "ring", "value": "ring_target_corona" },
+      "effects": [
+        { "action": "add_bom_item", "type": "printed_parts", "name": "IT2 Target Corona Conversion Adapters", "qty": 3, "material": "PLA / PETG" }
+      ]
+    },
+    {
+      "id": "direct_fasteners_zero_m4_inserts",
+      "trigger": { "field": "assembly_style", "value": "fasteners_direct_tapping" },
+      "effects": [
+        { "action": "set_bom_hardware_override", "target_item": "M4 Heat Inserts (6.3mm OD, max 9mm length)", "qty": 0 }
+      ]
+    },
+    {
+      "id": "baseplate_m6_inserts_calc",
+      "eval": "mounting === 'mount_baseplate_stand' ? 7 : (has_baseplate ? 3 : 0)",
+      "target_hardware": "M6 Heat Inserts (8mm OD)",
+      "reason": "3x for wall-mounted Rota-Lock levelers; 7x for stand mounting brackets + levelers."
+    }
+  ],
+  "presets": [
+    {
+      "id": "preset_budget_lens",
+      "name": "📱 Ultra-Budget Phone Lens",
+      "description": "Single-phone vision using Autodarts Lens + DIY Ring. Zero PC, zero USB cameras.",
+      "config": {
+        "mounting": "mount_direct_wall",
+        "has_baseplate": false,
+        "vision": "vision_autodarts_lens",
+        "ring": "ring_diy_standard",
+        "lighting_mode": "lighting_standard_white",
+        "compute": "compute_none",
+        "cable_routing": "cable_routing_none",
+        "assembly_style": "fasteners_direct_tapping",
+        "baseplate_addons": []
+      }
+    },
+    {
+      "id": "preset_standard_wall",
+      "name": "🎯 Standard Wall 3-Cam Rig",
+      "description": "Direct wall mounting, Winmau Plasma or DIY Ring, HBV OV9732 cameras.",
+      "config": {
+        "mounting": "mount_direct_wall",
+        "has_baseplate": false,
+        "vision": "vision_3cam_ov9732",
+        "ring": "ring_winmau_plasma",
+        "lighting_mode": "lighting_standard_white",
+        "compute": "compute_existing_pc",
+        "cable_routing": "cable_routing_clips_y",
+        "assembly_style": "fasteners_direct_tapping",
+        "baseplate_addons": []
+      }
+    },
+    {
+      "id": "preset_pro_silent",
+      "name": "🤫 Pro Silent Baseplate Rig",
+      "description": "IT2 Baseplate with TPU sound dampening, hidden hardware bay, and HBV OV2710 cameras.",
+      "config": {
+        "mounting": "mount_baseplate_wall",
+        "has_baseplate": true,
+        "vision": "vision_3cam_ov2710",
+        "ring": "ring_diy_standard",
+        "lighting_mode": "lighting_standard_white",
+        "compute": "compute_mini_pc",
+        "cable_routing": "cable_routing_baseplate",
+        "assembly_style": "fasteners_heat_inserts",
+        "baseplate_addons": ["addon_tpu_dampeners", "addon_hardware_bay"]
+      }
+    },
+    {
+      "id": "preset_arcade_wled",
+      "name": "🌈 Arcade WLED Edition",
+      "description": "Dual-channel reactive lighting + ambient baseplate halo for game celebrations.",
+      "config": {
+        "mounting": "mount_baseplate_wall",
+        "has_baseplate": true,
+        "vision": "vision_3cam_ov2710",
+        "ring": "ring_diy_standard",
+        "lighting_mode": "lighting_reactive_wled",
+        "compute": "compute_mini_pc",
+        "cable_routing": "cable_routing_baseplate",
+        "assembly_style": "fasteners_heat_inserts",
+        "baseplate_addons": ["addon_tpu_dampeners", "addon_hardware_bay", "addon_baseplate_ambient_wled"]
+      }
+    }
+  ]
+}

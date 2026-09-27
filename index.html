@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT2 Autodarts BOM Configurator | Interactive Build Customizer</title>
+  <meta name="description" content="Official interactive Bill of Materials (BOM) configurator for the IT2 Autodarts scoring system. Customize mounting, 3D printed parts, cameras, light rings, and hardware.">
+  <meta name="theme-color" content="#0a0d14">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-wrap">
+        <div class="brand-logo-icon">🎯</div>
+        <div>
+          <h1 class="brand-title">IT2 System Configurator</h1>
+          <p class="brand-subtitle">Autodarts Autoscoring Ecosystem • by IteraThor</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-header btn-header-accent" id="btn-open-topology">
+          <span>🗺️ Relationship Map</span>
+        </button>
+        <a href="https://makerworld.com/en/models/1334165" target="_blank" rel="noopener noreferrer" class="btn-header">
+          <span>🖨️ IT2 System (Makerworld)</span> ↗
+        </a>
+        <a href="https://makerworld.com/en/models/2782096" target="_blank" rel="noopener noreferrer" class="btn-header">
+          <span>🛠️ Baseplate (Makerworld)</span> ↗
+        </a>
+        <a href="https://github.com/IteraThor/IT2-Documentation" target="_blank" rel="noopener noreferrer" class="btn-header">
+          <span>📖 GitHub Docs</span> ↗
+        </a>
+        <a href="https://discord.com/invite/pZAjmwV5kE" target="_blank" rel="noopener noreferrer" class="btn-header">
+          <span>💬 Discord</span> ↗
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 1-Click Preset Quick-Starters -->
+  <section class="presets-bar" aria-label="Quick Presets">
+    <div class="presets-container">
+      <span class="presets-label">⚡ Quick Presets:</span>
+      <div class="preset-pills" id="preset-pills">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Main 2-Column Responsive Layout -->
+  <main class="main-layout">
+
+    <!-- Left Column: Progressive Form Cards -->
+    <div class="config-column">
+
+      <!-- Step 1: Mounting & Physical Anchor -->
+      <section class="config-section" id="section-mounting">
+        <div class="section-header">
+          <div class="step-indicator">1</div>
+          <div>
+            <h2 class="section-title">Mounting Environment & Structure</h2>
+            <p class="section-desc">Choose where your dartboard is placed and how the IT2 system attaches.</p>
+          </div>
+        </div>
+        <div class="cards-grid" id="mounting-options">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- Step 2: Baseplate Add-ons (Conditional) -->
+      <section class="config-section" id="section-baseplate-addons">
+        <div class="section-header">
+          <div class="step-indicator">2</div>
+          <div>
+            <h2 class="section-title">IT2 Baseplate Modular Upgrades</h2>
+            <p class="section-desc">Features unlocked by the 4-part interlocking Baseplate backboard.</p>
+          </div>
+        </div>
+        <div class="cards-grid" id="baseplate-addons-options">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- Step 3: Vision Subsystem -->
+      <section class="config-section" id="section-vision">
+        <div class="section-header">
+          <div class="step-indicator">3</div>
+          <div>
+            <h2 class="section-title">Vision & Scoring Architecture</h2>
+            <p class="section-desc">Select between the classic 3-camera rig or the new single-phone Autodarts Lens.</p>
+          </div>
+        </div>
+        <div class="cards-grid" id="vision-options">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- Step 4: Light Ring & Frame -->
+      <section class="config-section" id="section-ring">
+        <div class="section-header">
+          <div class="step-indicator">4</div>
+          <div>
+            <h2 class="section-title">Light Ring & Mechanical Frame</h2>
+            <p class="section-desc">IT2 natively matches the Winmau Plasma pattern, or provides adapters & full DIY rings.</p>
+          </div>
+        </div>
+        <div class="cards-grid" id="ring-options">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- Step 5: Lighting Mode -->
+      <section class="config-section" id="section-lighting">
+        <div class="section-header">
+          <div class="step-indicator">5</div>
+          <div>
+            <h2 class="section-title">Lighting Style & Animations</h2>
+            <p class="section-desc">Standard shadow-free white illumination vs. reactive WLED animations for game hits.</p>
+          </div>
+        </div>
+        <div class="cards-grid" id="lighting-options">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- Step 6: Host Computer & Cabling -->
+      <section class="config-section" id="section-compute">
+        <div class="section-header">
+          <div class="step-indicator">6</div>
+          <div>
+            <h2 class="section-title">Host Computer & Cable Routing</h2>
+            <p class="section-desc">Select the compute hardware that runs the Autodarts vision engine.</p>
+          </div>
+        </div>
+        <div id="lens-compute-notice" class="banner-notice" style="display: none;">
+          <span>💡 <strong>Autodarts Lens Active:</strong> Your smartphone handles scoring directly; an external PC is not required!</span>
+        </div>
+        <div class="cards-grid" id="compute-options">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- Step 7: Fastener Strategy -->
+      <section class="config-section" id="section-assembly">
+        <div class="section-header">
+          <div class="step-indicator">7</div>
+          <div>
+            <h2 class="section-title">Assembly & Fastener Preference</h2>
+            <p class="section-desc">Toggle between heavy-duty brass heat inserts or budget-friendly direct self-tapping.</p>
+          </div>
+        </div>
+        <div class="cards-grid" id="assembly-options">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Right Column: Sticky Real-Time BOM Card -->
+    <aside class="bom-column" aria-label="Bill of Materials">
+      <div class="bom-card">
+        
+        <!-- BOM Card Header -->
+        <div class="bom-header">
+          <div class="bom-title-wrap">
+            <span style="font-size: 1.3rem;">📋</span>
+            <h2 class="bom-title">Bill of Materials (BOM)</h2>
+          </div>
+          <span class="bom-badge">Live Synced</span>
+        </div>
+
+        <!-- Metrics Strip -->
+        <div class="metrics-strip">
+          <div class="metric-box">
+            <span class="metric-val" id="metric-wall-holes">3 Holes</span>
+            <span class="metric-lbl">Wall Drilling</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-val" id="metric-printed-pieces">9 Parts</span>
+            <span class="metric-lbl">3D Printed Files</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-val" id="metric-print-weight">~780g</span>
+            <span class="metric-lbl">Est. Filament</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-val" id="metric-fastener-count">26 Items</span>
+            <span class="metric-lbl">Fasteners & Screws</span>
+          </div>
+        </div>
+
+        <!-- Scrollable Itemized Tables -->
+        <div class="bom-scroll-area" id="bom-content-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+
+        <!-- Actions Footer -->
+        <div class="bom-footer">
+          <button type="button" class="btn-action btn-primary" id="btn-copy-bom" title="Copy formatted Markdown for Discord or Forum">
+            <span>📋 Copy BOM</span>
+          </button>
+          <button type="button" class="btn-action btn-secondary" id="btn-export-csv" title="Download CSV Spreadsheet">
+            <span>📥 Export CSV</span>
+          </button>
+          <button type="button" class="btn-action btn-secondary" id="btn-print-bom" title="Printable Workshop Checklist">
+            <span>🖨️ Print</span>
+          </button>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Topology / Relationship Modal -->
+  <div class="modal-backdrop" id="topology-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">🗺️ IT2 System Architecture & Relationship Map</h3>
+        <button type="button" class="modal-close" id="btn-close-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+          How the IT2 system components physically mount, interconnect, and route power and data:
+        </p>
+        <div class="topology-grid">
+          <div class="topology-box">
+            <h4>🎯 1. Mechanical Foundation</h4>
+            <ul>
+              <li><strong>Winmau Plasma Standard:</strong> IT2 camera arms match the Plasma hole pattern 1:1 with zero adapters.</li>
+              <li><strong>Target Corona:</strong> Requires 3x 3D-printed conversion brackets to adapt magnetic legs.</li>
+              <li><strong>DIY Light Rings:</strong> Standard 360° or Low-Ceiling (≤ 2.0m flat arch) both share the same arm mounts.</li>
+            </ul>
+          </div>
+          <div class="topology-box">
+            <h4>🧱 2. The Baseplate Hub</h4>
+            <ul>
+              <li><strong>Wall Impact:</strong> Direct Wall requires ~8 holes; Baseplate requires only 3 holes.</li>
+              <li><strong>Stand Support:</strong> Winmau Xtreme 2 mobile stand natively mounts straight to the baseplate.</li>
+              <li><strong>Integrated Features:</strong> Internal cable routing channels, TPU 95A sound dampeners, rear hardware bay.</li>
+            </ul>
+          </div>
+          <div class="topology-box">
+            <h4>📷 3. Vision Architecture</h4>
+            <ul>
+              <li><strong>Classic 3-Camera Rig:</strong> 3x HBV 32x32 USB boards (OV9732 budget / OV2710 premium) mounted at 120°.</li>
+              <li><strong>Autodarts Lens:</strong> Uses a single smartphone in a calibrated ring mount; eliminates arms, USB cables, and external PC.</li>
+            </ul>
+          </div>
+          <div class="topology-box">
+            <h4>🔩 4. Fasteners & Assembly</h4>
+            <ul>
+              <li><strong>Heat-Set Inserts:</strong> M4/M6 brass inserts melted into plastic; reusable for lifetime disassembly.</li>
+              <li><strong>Direct Self-Tapping:</strong> M4 screws tap straight into plastic pilot holes; €0 inserts and no soldering iron needed.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/catalog.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
